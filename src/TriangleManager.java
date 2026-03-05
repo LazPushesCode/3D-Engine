@@ -62,15 +62,15 @@ public class TriangleManager {
         }
         for(int i = 0; i < m.finalVectors.size(); i++){
             double wm = m.finalVectors.get(i)[3];
-                double xm = m.finalVectors.get(i)[0];
-                double ym = m.finalVectors.get(i)[1];
-                double zm = m.finalVectors.get(i)[2];
-                if(wm != 0){
-                    m.finalVectors.get(i)[0] /= wm;
-                    m.finalVectors.get(i)[1] /= wm;
-                    // m.finalVectors.get(i)[2] /= wm;
-                    m.finalVectors.get(i)[3] = 1;
-                }
+            double xm = m.finalVectors.get(i)[0];
+            double ym = m.finalVectors.get(i)[1];
+            double zm = m.finalVectors.get(i)[2];
+            if(wm != 0){
+                m.finalVectors.get(i)[0] /= wm;
+                m.finalVectors.get(i)[1] /= wm;
+                // m.finalVectors.get(i)[2] /= wm;
+                m.finalVectors.get(i)[3] = 1;
+            }
         }
     }
     static double determineDirection(int[] tri, ArrayList<double[]> vtx) {
@@ -115,16 +115,18 @@ public class TriangleManager {
                         output.add(v2);
                     } else if(e1){
                         m.finalVectors.add(calculateIntersection(m.finalVectors.get(v1), m.finalVectors.get(v2), p));
+                        m.finalTextureMappings.add(new double[]{0,0});
                         output.add(m.finalVectors.size()-1);
                     } else if(e2){
                         //add intersection and second
                         m.finalVectors.add(calculateIntersection(m.finalVectors.get(v1), m.finalVectors.get(v2), p));
+                        m.finalTextureMappings.add(new double[]{0,0});
                         output.add(m.finalVectors.size()-1);
                         output.add(v2);
                     } 
                 }
                 if(output.isEmpty()){
-                    System.out.println("output is emtpy");
+                    System.out.println("output is empty");
                     return output;
                 }
                 vertices = output;

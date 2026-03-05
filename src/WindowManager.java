@@ -5,7 +5,7 @@ public class WindowManager {
     int width;
     int length;
     int [][] colorBuffer;
-    float [][] depthBuffer;
+    double [][] depthBuffer;
     WindowManager(int windowWidth, int windowHeight){
         frame.setSize(windowWidth, windowHeight);
         width = windowWidth;
@@ -14,7 +14,7 @@ public class WindowManager {
         panel.setFocusable(true);
         panel.requestFocusInWindow();
         colorBuffer = new int[width][length];
-        depthBuffer = new float[width][length];
+        depthBuffer = new double[width][length];
         populateBuffers();
         frame.add(panel);
     }
@@ -38,6 +38,16 @@ public class WindowManager {
       panel.addKeyListener(input);
     }
     void convertToNDC(Entity m){
+      // System.out.println("=======start============");
+      // for(int i = 0; i < m.indices.length; i++){
+      //    System.out.println(m.indices[i][0] + " " + m.indices[i][1] + " " + m.indices[i][2]);
+      // }
+      // System.out.println("========================");
+      // System.out.println("=======start============");
+      // for(int i = 0; i < m.finalIndices.size(); i++){
+      //    System.out.println(m.finalIndices.get(i)[0] + " " + m.finalIndices.get(i)[1] + " " + m.finalIndices.get(i)[2]);
+      // }
+      // System.out.println("========================");
         for(int i = 0; i < m.finalVectors.size(); i++){
             double x = m.finalVectors.get(i)[0];
             double y = m.finalVectors.get(i)[1];
@@ -68,7 +78,7 @@ public class WindowManager {
          if(m.finalVectors.get(i)[1] <= this.length && m.finalVectors.get(i)[1] >= -(this.length)){
             int x = (int)m.finalVectors.get(i)[0];
             int y = (int)m.finalVectors.get(i)[1];
-            int z = (int)m.finalVectors.get(i)[2];
+            double z = m.finalVectors.get(i)[2];
             if(depthTest(x, y, z)){
                this.depthBuffer[x][y] = z;
                this.colorBuffer[x][y] = 0xFFFF0000;
@@ -102,9 +112,9 @@ public class WindowManager {
          System.arraycopy(xValues2, 0, combinedArray, xValues1.length, xValues2.length);
         int left = decideWhichIsLeft(combinedArray, xValues3);
          if(left == 0){
-            drawLines((int)m.finalVectors.get(pos1)[1], (int)m.finalVectors.get(pos3)[1], combinedArray, xValues3, (int)m.finalVectors.get(pos1)[2]);
+            drawLines((int)m.finalVectors.get(pos1)[1], (int)m.finalVectors.get(pos3)[1], combinedArray, xValues3, m.finalVectors.get(pos1)[2], m, i);
          } else {
-            drawLines((int)m.finalVectors.get(pos1)[1], (int)m.finalVectors.get(pos3)[1], xValues3, combinedArray, (int)m.finalVectors.get(pos1)[2]);
+            drawLines((int)m.finalVectors.get(pos1)[1], (int)m.finalVectors.get(pos3)[1], xValues3, combinedArray, m.finalVectors.get(pos1)[2], m, i);
          }
          } catch (Exception e){
             System.out.println("error: ");
@@ -112,25 +122,83 @@ public class WindowManager {
          }
       }
    }
-    void drawLines(int yStart, int yEnd, int[] xLeftValues, int[] xRightValues, int z){
+    void drawLines(int yStart, int yEnd, int[] xLeftValues, int[] xRightValues, double z, Entity m, int currentIndice){
       int length = Math.abs(yEnd - yStart);
       if(xLeftValues.length != xRightValues.length) return;
       for(int i = 0; i < length; i++){
          for(int j = xLeftValues[i]; j < xRightValues[i]; j++){
             try {
-               if(depthTest(j, i+yStart, z)){
-                  this.depthBuffer[j][i+yStart] = z;
-                  this.colorBuffer[j][i+yStart] = ((j==xLeftValues[i] || j == xRightValues[i]-1)) ? 0xFFFF0000 : 0xFFFFFFFF;
-               } 
+               // if(depthTest(j, i+yStart, z)){
+                  sampleTexture(m, 
+                     m.finalIndices.get(currentIndice)[0], 
+                     m.finalIndices.get(currentIndice)[1], 
+                     m.finalIndices.get(currentIndice)[2],
+                     j, i+yStart, ((j==xLeftValues[i] || j == xRightValues[i]-1)));
+                     // this.colorBuffer[j][i+yStart] = ((j==xLeftValues[i] || j == xRightValues[i]-1)) ? 0xFFFF0000 : 0xFFFFFFFF;
+               // } 
             } catch (Exception e) {
-               System.out.println("error in drawing");
+               e.printStackTrace();
             }
          }
       }
    }
-    boolean depthTest(int x, int y, int z){
+   void sampleTexture(Entity e, int t0, int t1, int t2, int px, int py, boolean flag){
+      int x0 = (int)e.finalVectors.get(t0)[0];
+      int y0 = (int)e.finalVectors.get(t0)[1];
+      double z0 = e.finalVectors.get(t0)[2];
+      double w0 = e.finalVectors.get(t0)[3];
+      double u0 = e.finalTextureMappings.get(t0)[0];
+      double v0 = e.finalTextureMappings.get(t0)[1];
+
+      int x1 = (int)e.finalVectors.get(t1)[0];
+      int y1 = (int)e.finalVectors.get(t1)[1];
+      double z1 = e.finalVectors.get(t1)[2];
+      double w1 = e.finalVectors.get(t1)[3];
+      double u1 = e.finalTextureMappings.get(t1)[0];
+      double v1 = e.finalTextureMappings.get(t1)[1];
+
+      int x2 = (int)e.finalVectors.get(t2)[0];
+      int y2 = (int)e.finalVectors.get(t2)[1];
+      double z2 = e.finalVectors.get(t2)[2];
+      double w2 = e.finalVectors.get(t2)[3];
+      double u2 = e.finalTextureMappings.get(t2)[0];
+      double v2 = e.finalTextureMappings.get(t2)[1];
+
+      double denominator = (y1 - y2) * (x0 - x2) + (x2 - x1) * (y0-y2);
+
+      double b0 = ((y1-y2)*(px-x2)+(x2-x1)*(py-y2))/denominator;
+      double b1 = ((y2-y0)*(px-x2)+(x0-x2)*(py-y2))/denominator;
+      double b2 = 1 - b1 - b0;
+
+      u0 *= (1/w0);
+      u1 *= (1/w1);
+      u2 *= (1/w2);
+
+      v0 *= (1/w0);
+      v1 *= (1/w1);
+      v2 *= (1/w2);
+
+      z0 *= (1/w0);
+      z1 *= (1/w0);
+      z2 *= (1/w0);
+
+      double u = b0*u0 + b1*u1 + b2*u2;
+      double v = b0*v0 + b1*v1 + b2*v2;
+      double z = b0 *z0 + b1*z1 + b2*z2;
+      double wInterpolated = b0*(1/w0) + b1*(1/w1) + b2*(1/w2);
+
+      u /= wInterpolated;
+      v /= wInterpolated;
+      z /= wInterpolated;
+      if(depthTest(px, py, z)){
+         this.depthBuffer[px][py] = z;
+         this.colorBuffer[px][py] = (flag) ? 0xFFFF0000 : 0xFFFFFFFF;
+      }
+      // System.out.println("u: " + u + " v: " + v);
+   }
+    boolean depthTest(int x, int y, double z){
       if(!inScreenBounds(x, y)) return false;
-      return (z < this.depthBuffer[x][y]);
+      return (z <= this.depthBuffer[x][y]);
    }
     int[] interpolate(int x1, int y1, int x2, int y2) {
         if (y1 == y2) return new int[0];

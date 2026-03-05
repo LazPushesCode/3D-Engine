@@ -2,13 +2,14 @@ import java.util.ArrayList;
 public class Entity {
     double[][] objectSpaceVectors;
     int [][] indices;
+    double [][] textureMappings;
 
     double[][] worldSpaceVectors;
-
     ArrayList<double[]> viewSpaceVectors;
+
     ArrayList<double[]> finalVectors;
     ArrayList<int[]> finalIndices;
-
+    ArrayList<double[]> finalTextureMappings;
 
     Matrix transformation;
 
@@ -32,9 +33,15 @@ public class Entity {
         }
     }
     void initializeVectorSpaces(double [][] vertices){
-        objectSpaceVectors = new double[vertices.length][vertices[0].length+1];
-        worldSpaceVectors = new double[vertices.length][vertices[0].length+1];
-        for(int i = 0; i < vertices.length; i++){
+        int rowLength = vertices.length;
+        int colLength = vertices[0].length+1;
+
+        objectSpaceVectors = new double[rowLength][colLength];
+        worldSpaceVectors = new double[rowLength][colLength];
+        textureMappings = new double[rowLength][2];
+        for(int i = 0; i < rowLength; i++){
+            textureMappings[i][0] = 0;
+            textureMappings[i][1] = 0;
             for(int j = 0; j < vertices[i].length; j++){
                 objectSpaceVectors[i][j] = vertices[i][j];
             }
@@ -45,6 +52,7 @@ public class Entity {
         viewSpaceVectors = new ArrayList<>();
         finalVectors = new ArrayList<>();
         finalIndices = new ArrayList<>();
+        finalTextureMappings = new ArrayList<>();
     }
     void cubeMesh(){
         double [][] vertices = {
@@ -78,6 +86,16 @@ public class Entity {
             {7,5,6} 
         };
         initializeVectorSpaces(vertices);
+        textureMappings = new double[][]{
+            {0, 0},
+            {0.5, 0},
+            {0, 0.5},
+            {0.5, 0.5},
+            {1, 1},
+            {0.5, 1},
+            {1, 0.5},
+            {0.5, 0.5}
+        };
         this.indices = cubeIndices;
         initializeLists();
         transformation = Matrix.Identity();
@@ -142,5 +160,6 @@ public class Entity {
         viewSpaceVectors.clear();
         finalVectors.clear();
         finalIndices.clear();
+        finalTextureMappings.clear();
     }
 }

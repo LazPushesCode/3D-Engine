@@ -10,16 +10,16 @@ public class main{
 
         Entity cube = new Entity();
         cube.cubeMesh();
-        cube.translate(0,0,3);
+        cube.translate(0,0,4);
         
         Entity cube2 = new Entity();
         cube2.cubeMesh();
-        cube2.translate(0, -1, 0);
+        cube2.translate(1, 0, 3);
         cube2.scale(1, 1, 1);
 
         Entity cube3 = new Entity();
         cube3.cubeMesh();
-        cube3.translate(-1,0,3).scale(1, 1, 1);
+        cube3.translate(0,0,3).scale(1, 1, 1);
 
         wm.openWindow();
         wm.addInputListener(im);
@@ -34,21 +34,15 @@ public class main{
         while(true){
             try {
                 deltaTime = (currentTime - previousTime)%1000;
-                double move = 0.01 * deltaTime;
-                cube3.translate(0, 0, 0).rotatex(-1).rotatey(1).rotatez(1).scale(1, 1, 1);
-                rotate += 0.001;
-                
-                cube.scale(1,1,1);
+                cube.rotatex(5);
                 wm.clearScreen();
                 cm.pollInput(im, deltaTime);
-                
                 cm.updateCameraMatrix();
                 for(Entity et : entityList){
                     renderEntity(cm, wm, et);
                 }
                 wm.updateScreen();
                 Thread.sleep(16);
-
                 previousTime = currentTime;
                 currentTime = (System.currentTimeMillis());
             } catch (Exception e) {
