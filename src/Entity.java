@@ -13,14 +13,30 @@ public class Entity {
 
     Matrix transformation;
 
+    double x, y, z;
+    double yaw, pitch, roll;
+    double xSize, ySize, zSize;
+
     Entity(){
 
     }
     Entity(double [][] vertices, int [][] ind, Matrix m){
         initializeVectorSpaces(vertices);
+        initializeVariables();
         this.indices = ind;
         this.transformation = m;
         initializeLists();
+    }
+    void initializeVariables(){
+        x = 0;
+        y = 0;
+        z = 0;
+        yaw = 0;
+        pitch = 0;
+        roll = 0;
+        xSize = 1;
+        ySize = 1;
+        zSize = 1;
     }
     void convertToWorldSpace(){
         for(int k = 0; k < objectSpaceVectors.length; k++){
@@ -86,6 +102,7 @@ public class Entity {
             {7,5,6} 
         };
         initializeVectorSpaces(vertices);
+        initializeVariables();
         textureMappings = new double[][]{
             {0, 0},
             {0.5, 0},
@@ -100,7 +117,10 @@ public class Entity {
         initializeLists();
         transformation = Matrix.Identity();
     }
-    Entity setWorldPosition(double x, double y, double z){
+    Entity setWorldPosition(double givenx, double giveny, double givenz){
+        x = givenx;
+        y = giveny;
+        z = givenz;
         transformation = Matrix.translate(x, y, z);
         return this;
     }
@@ -108,24 +128,33 @@ public class Entity {
         transformation = Matrix.Identity();
         return this;
     }
-    Entity translate(double x, double y, double z){
+    Entity translate(double givenx, double giveny, double givenz){
+        this.x += givenx;
+        this.y += giveny;
+        this.z += givenz;
         transformation = transformation.multiply(Matrix.translate(x, y, z));
         return this;
     }
-    Entity scale(double x, double y, double z){
-        transformation = transformation.multiply(Matrix.scale(x, y, z));
+    Entity scale(double givenx, double giveny, double givenz){
+        this.xSize += givenx;
+        this.ySize += giveny;
+        this.zSize += givenz;
+        transformation = transformation.multiply(Matrix.scale(xSize, ySize, zSize));
         return this;
     }
     Entity rotatex(double degree){
-        transformation = transformation.multiply(Matrix.rotatex(degree));
+        pitch += degree;
+        transformation = transformation.multiply(Matrix.rotatex(pitch));
         return this;
     }
     Entity rotatey(double degree){
-        transformation = transformation.multiply(Matrix.rotatey(degree));
+        yaw += degree;
+        transformation = transformation.multiply(Matrix.rotatey(yaw));
         return this;
     }
     Entity rotatez(double degree){
-        transformation = transformation.multiply(Matrix.rotatez(degree));
+        roll += degree;
+        transformation = transformation.multiply(Matrix.rotatez(roll));
         return this;
     }
     void sortVertices(){
@@ -161,5 +190,6 @@ public class Entity {
         finalVectors.clear();
         finalIndices.clear();
         finalTextureMappings.clear();
+        resetTransformation();
     }
 }

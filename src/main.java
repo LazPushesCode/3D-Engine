@@ -11,30 +11,18 @@ public class main{
         Entity cube = new Entity();
         cube.cubeMesh();
         cube.translate(0,0,4);
-        
-        Entity cube2 = new Entity();
-        cube2.cubeMesh();
-        cube2.translate(1, 0, 3);
-        cube2.scale(1, 1, 1);
-
-        Entity cube3 = new Entity();
-        cube3.cubeMesh();
-        cube3.translate(0,0,3).scale(1, 1, 1);
-
         wm.openWindow();
         wm.addInputListener(im);
         ArrayList<Entity> entityList = new ArrayList<>();
         entityList.add(cube);
-        entityList.add(cube2);
-        entityList.add(cube3);
         long currentTime = (System.currentTimeMillis());
         long previousTime = 0;
         double deltaTime = 0;
-        double rotate = 0.01;
+        System.out.println("cubes size: " + cube.xSize);
         while(true){
             try {
                 deltaTime = (currentTime - previousTime)%1000;
-                cube.rotatex(5);
+                cube.translate(0, 0.01, 0);
                 wm.clearScreen();
                 cm.pollInput(im, deltaTime);
                 cm.updateCameraMatrix();
