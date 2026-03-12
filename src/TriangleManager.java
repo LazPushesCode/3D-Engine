@@ -2,24 +2,25 @@ import java.util.ArrayList;
 
 public class TriangleManager {
     static void cullTriangles(Entity m, CameraManager c){
-        ArrayList<int[]> validIndices = backFaceCulling(m);
-        c.convertToClipSpace(m);
-        finalizeTriangles(m, validIndices);
-    }
-    static ArrayList<int[]> backFaceCulling(Entity m){
         ArrayList<int[]> validIndices = new ArrayList<>();
+        ArrayList<double[][]> validTextures = new ArrayList<>();
+        //backface culling
         for(int i = 0; i < m.indices.length; i++){
             if(determineDirection(m.indices[i], m.viewSpaceVectors) <= 0) {
                 continue;
             }
             validIndices.add(m.indices[i].clone());
+            validTextures.add(m.textureMapping[i].clone());
         }
-        return validIndices;
+        c.convertToClipSpace(m);
+        finalizeTriangles(m, validIndices, validTextures);
     }
-    static void finalizeTriangles(Entity m, ArrayList<int[]> validIndices){
+    static void finalizeTriangles(Entity m, ArrayList<int[]> validIndices, ArrayList<double[][]> validTextures){
         
         ArrayList<int[]> clipTriList = new ArrayList<>();
         ArrayList<int[]> finalTriList = new ArrayList<>();
+        ArrayList<double[][]> finalTextureList = new ArrayList<>();
+
         for(int i = 0; i < validIndices.size(); i++){
             int outside = 0;
             for(int j = 0; j < validIndices.get(i).length; j++){
@@ -44,6 +45,7 @@ public class TriangleManager {
                 continue;
             }
             finalTriList.add(validIndices.get(i));
+            finalTextureList.add(validTextures.get(i));
         }
         for(int[] triangle : clipTriList){
             ArrayList<Integer> tri = new ArrayList<>();
@@ -55,10 +57,12 @@ public class TriangleManager {
             for(int i = 1; i < tri.size()-1; i++){
                 int[] t = {tri.get(0), tri.get(i), tri.get(i+1)};
                 finalTriList.add(t);
+                finalTextureList.add(new double[][] {{0,0}, {0, 0}, {0, 0}});
             }
         }
         if(!finalTriList.isEmpty()) {
            m.finalIndices = (ArrayList<int[]>) finalTriList.clone();
+           m.finalTextureMapping = (ArrayList<double[][]>) finalTextureList.clone();
         }
         for(int i = 0; i < m.finalVectors.size(); i++){
             double wm = m.finalVectors.get(i)[3];
@@ -68,8 +72,8 @@ public class TriangleManager {
             if(wm != 0){
                 m.finalVectors.get(i)[0] /= wm;
                 m.finalVectors.get(i)[1] /= wm;
-                // m.finalVectors.get(i)[2] /= wm;
-                m.finalVectors.get(i)[3] = 1;
+                m.finalVectors.get(i)[2] /= wm;
+                // m.finalVectors.get(i)[3] = 1;
             }
         }
     }
@@ -111,6 +115,8 @@ public class TriangleManager {
                     int v2 = vertices.get((i+1) % vertices.size());
                     boolean e1 = isInPlane(p, m.finalVectors.get(v1));
                     boolean e2 = isInPlane(p, m.finalVectors.get(v2));
+                    
+                    //when cliping a triangle, we need to ensure the uv mappings remain consistent
                     if(e1 && e2){
                         output.add(v2);
                     } else if(e1){
@@ -118,7 +124,6 @@ public class TriangleManager {
                         m.finalTextureMappings.add(new double[]{0,0});
                         output.add(m.finalVectors.size()-1);
                     } else if(e2){
-                        //add intersection and second
                         m.finalVectors.add(calculateIntersection(m.finalVectors.get(v1), m.finalVectors.get(v2), p));
                         m.finalTextureMappings.add(new double[]{0,0});
                         output.add(m.finalVectors.size()-1);

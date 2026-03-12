@@ -9,20 +9,26 @@ public class main{
         cm.setCameraPosition(1, 0, 0);
 
         Entity cube = new Entity();
+        Entity cube2 = new Entity();
         cube.cubeMesh();
+        cube2.cubeMesh();
+        cube.setTexture("C:\\Users\\yalfo\\3D-Engine\\resources\\assets\\11635.png");
+        System.out.println("w: " + cube.texture.getWidth() + " h: " + cube.texture.getHeight());
         cube.translate(0,0,4);
+        cube2.translate(1,0,4);
         wm.openWindow();
         wm.addInputListener(im);
         ArrayList<Entity> entityList = new ArrayList<>();
         entityList.add(cube);
+        // entityList.add(cube2);
         long currentTime = (System.currentTimeMillis());
         long previousTime = 0;
         double deltaTime = 0;
-        System.out.println("cubes size: " + cube.xSize);
         while(true){
             try {
                 deltaTime = (currentTime - previousTime)%1000;
-                cube.translate(0, 0.01, 0);
+                cube.translate(0, 0, 0);
+                // cube2.translate(0, 0, 0);
                 wm.clearScreen();
                 cm.pollInput(im, deltaTime);
                 cm.updateCameraMatrix();

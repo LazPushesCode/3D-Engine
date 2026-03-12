@@ -6,7 +6,8 @@ public class CameraManager {
 
     double x, y, z;
     double pitch, yaw, roll;
-    double[] forward;
+
+    double xMoved, yMoved, zMoved;
 
     Matrix viewMatrix;
     Matrix projectionMatrix;
@@ -20,22 +21,34 @@ public class CameraManager {
         this.x = 0;
         this.y = 0;
         this.z = 0;
-        forward = new double[3];
-        for(int i = 0; i < 3; i++){
-            forward[i] = 0;
-        }
         this.FOV = Math.toRadians(fov);
         this.aspect = (double)windowWidth/windowLength;
         this.near = 0.1;
         this.far = 1000;
-        this.speed = 0.005;
+        this.speed = 0.001;
         viewMatrix = Matrix.Identity();
         projectionMatrix = Matrix.Identity();
         updateCameraMatrix();
     }
     void updateViewMatrix(){
-        // viewMatrix = Matrix.translate(-x, -y, -z).multiply(Matrix.rotatex(pitch).multiply(Matrix.rotatey(yaw)).multiply(Matrix.rotatez(roll)));
-        viewMatrix = Matrix.rotatex(pitch).multiply(Matrix.rotatey(yaw).multiply(Matrix.rotatez(roll))).multiply(Matrix.translate(-x,-y,-z));
+        viewMatrix = Matrix.rotatex(pitch).multiply(Matrix.rotatey(yaw)).multiply(Matrix.translate(-x,-y,-z));
+        // System.out.print("pos:       (" + x + ", " + y + ", " + z + ")");
+        // System.out.println(" (" + pitch + ", " + yaw + ", " + roll + ")");
+        // viewMatrix = Matrix.translate(-x,-y,-z);
+        // viewMatrix = viewMatrix.multiply(Matrix.rotatey(yaw));
+        // viewMatrix.printMatrix();
+    }
+    CameraManager translate(double givenx, double giveny, double givenz){
+        this.x += givenx;
+        this.y += giveny;
+        this.z += givenz;
+        viewMatrix = viewMatrix.multiply(Matrix.translate(-x, -y, -z));
+        return this;
+    }
+    CameraManager rotatey(double degree){
+        yaw += degree;
+        viewMatrix = viewMatrix.multiply(Matrix.rotatey(yaw));
+        return this;
     }
     void updateProjectionMatrix(){
         double t = 1/Math.tan(FOV/2);
@@ -58,6 +71,7 @@ public class CameraManager {
             double clip[] = (projectionMatrix.vectorTransformation(m.viewSpaceVectors.get(i)));
             m.finalVectors.add(clip);
             m.finalTextureMappings.add(m.textureMappings[i]);
+            
         }
     }
     CameraManager setCameraPosition(double x, double y, double z){
@@ -67,38 +81,17 @@ public class CameraManager {
         updateCameraMatrix();
         return this;
     }
-    CameraManager translate(double x, double y, double z){
-        this.x += x;
-        this.y += y;
-        this.z += z;
-        updateCameraMatrix();
-        return this;
-    }
     void pollInput(InputManager im, double deltaTime){
-        computeForward();
+        double[] forward = computeForward();
+        // System.out.println();
+        // for(int i = 0; i < forward.length; i++){
+        //     System.out.print(forward[i] + " ");
+        // }
         forward = normalize(forward);
-
-        double[] worldUp = {0,1,0};
-        double[] right = crossProduct(worldUp, forward);
+        // System.out.println(" " + pitch + " " + yaw + " x: " + x + " y: " + y + " z: " + z);
+        double[] right = computeRight();
         right = normalize(right);
-
-        if(im.forward){
-            x += forward[0] * speed * deltaTime;
-            z += forward[2] * speed * deltaTime;
-        }
-        if(im.backward){
-            x -= forward[0] * speed * deltaTime;
-            z -= forward[2] * speed * deltaTime;
-        }
-        if(im.left){
-            x -= right[0] * speed * deltaTime;
-            z -= right[2] * speed * deltaTime;
-        }
-        if(im.right){
-            x += right[0] * speed * deltaTime;
-            z += right[2] * speed * deltaTime;
-        }
-         if(im.ru){
+        if(im.ru){
             this.pitch += .3 * deltaTime;
         }
         if(im.rd){
@@ -110,12 +103,41 @@ public class CameraManager {
         if(im.rr){
             this.yaw -= .3 * deltaTime;
         }
+        if(im.forward){
+            z += forward[0] * speed * deltaTime;
+            x += forward[2] * speed * deltaTime;
+        }
+        if(im.backward){
+            z -= forward[0] * speed * deltaTime;
+            x -= forward[2] * speed * deltaTime;
+        }
+        if(im.left){
+            z -= right[0] * speed * deltaTime;
+            x += right[2] * speed * deltaTime;
+        }
+        if(im.right){
+            z += right[0] * speed * deltaTime;
+            x -= right[2] * speed * deltaTime;
+        }
         clampPitch();
     }
-    void computeForward(){
-        forward[0] = Math.sin(yaw) * Math.cos(pitch); // X
-        forward[1] = Math.sin(pitch);                // Y
-        forward[2] = Math.cos(yaw) * Math.cos(pitch); // Z
+    double[] computeForward(){
+        double pitchRadian = Math.toRadians(pitch);
+        double yawRadian = Math.toRadians(yaw);
+        return new double[] {
+            Math.cos(pitchRadian) * Math.cos(yawRadian),
+            0,
+            Math.cos(pitchRadian) * Math.sin(yawRadian)
+        };
+    }
+    double[] computeRight(){
+        double pitchRadian = Math.toRadians(pitch);
+        double yawRadian = Math.toRadians(yaw);
+        return new double[] {
+            Math.cos(yawRadian - Math.PI/2),
+            0,
+            Math.sin(yawRadian - Math.PI/2)
+        };
     }
     double[] normalize(double[] direction){
         double length = 0;
@@ -142,5 +164,11 @@ public class CameraManager {
     void updateCameraMatrix(){
         updateViewMatrix();
         updateProjectionMatrix();
+    }
+    void resetFrameData(){
+        viewMatrix = Matrix.Identity();
+    }
+    void printCameraInfo(){
+        System.out.println("x: " + x + " y: " + y + " z: " + z);
     }
 }

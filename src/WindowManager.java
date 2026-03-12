@@ -38,16 +38,6 @@ public class WindowManager {
       panel.addKeyListener(input);
     }
     void convertToNDC(Entity m){
-      // System.out.println("=======start============");
-      // for(int i = 0; i < m.indices.length; i++){
-      //    System.out.println(m.indices[i][0] + " " + m.indices[i][1] + " " + m.indices[i][2]);
-      // }
-      // System.out.println("========================");
-      // System.out.println("=======start============");
-      // for(int i = 0; i < m.finalIndices.size(); i++){
-      //    System.out.println(m.finalIndices.get(i)[0] + " " + m.finalIndices.get(i)[1] + " " + m.finalIndices.get(i)[2]);
-      // }
-      // System.out.println("========================");
         for(int i = 0; i < m.finalVectors.size(); i++){
             double x = m.finalVectors.get(i)[0];
             double y = m.finalVectors.get(i)[1];
@@ -133,7 +123,7 @@ public class WindowManager {
                      m.finalIndices.get(currentIndice)[0], 
                      m.finalIndices.get(currentIndice)[1], 
                      m.finalIndices.get(currentIndice)[2],
-                     j, i+yStart, ((j==xLeftValues[i] || j == xRightValues[i]-1)));
+                     j, i+yStart, currentIndice, ((j==xLeftValues[i] || j == xRightValues[i]-1)));
                      // this.colorBuffer[j][i+yStart] = ((j==xLeftValues[i] || j == xRightValues[i]-1)) ? 0xFFFF0000 : 0xFFFFFFFF;
                // } 
             } catch (Exception e) {
@@ -142,27 +132,35 @@ public class WindowManager {
          }
       }
    }
-   void sampleTexture(Entity e, int t0, int t1, int t2, int px, int py, boolean flag){
-      int x0 = (int)e.finalVectors.get(t0)[0];
-      int y0 = (int)e.finalVectors.get(t0)[1];
+   void sampleTexture(Entity e, int t0, int t1, int t2, int px, int py, int currentTriangle, boolean flag){
+      // if(t0 == 2){
+      //    if(e.finalTextureMappings.get(t0)[0] != e.finalTextureMapping.get(currentTriangle)[0][0]){
+      //       System.out.println("inaccuracies: in tri: " + currentTriangle + " " + (e.finalTextureMappings.get(t0)[0]) + " " + (e.finalTextureMapping.get(currentTriangle)[0][0]));
+      //    }
+      // }
+      double x0 = e.finalVectors.get(t0)[0];
+      double y0 = e.finalVectors.get(t0)[1];
       double z0 = e.finalVectors.get(t0)[2];
       double w0 = e.finalVectors.get(t0)[3];
-      double u0 = e.finalTextureMappings.get(t0)[0];
-      double v0 = e.finalTextureMappings.get(t0)[1];
 
-      int x1 = (int)e.finalVectors.get(t1)[0];
-      int y1 = (int)e.finalVectors.get(t1)[1];
+      double u0 = e.finalTextureMapping.get(currentTriangle)[0][0];
+      double v0 = e.finalTextureMapping.get(currentTriangle)[0][1];
+
+      double x1 = e.finalVectors.get(t1)[0];
+      double y1 = e.finalVectors.get(t1)[1];
       double z1 = e.finalVectors.get(t1)[2];
       double w1 = e.finalVectors.get(t1)[3];
-      double u1 = e.finalTextureMappings.get(t1)[0];
-      double v1 = e.finalTextureMappings.get(t1)[1];
 
-      int x2 = (int)e.finalVectors.get(t2)[0];
-      int y2 = (int)e.finalVectors.get(t2)[1];
+      double u1 = e.finalTextureMapping.get(currentTriangle)[1][0];
+      double v1 = e.finalTextureMapping.get(currentTriangle)[1][1];
+
+      double x2 = e.finalVectors.get(t2)[0];
+      double y2 = e.finalVectors.get(t2)[1];
       double z2 = e.finalVectors.get(t2)[2];
       double w2 = e.finalVectors.get(t2)[3];
-      double u2 = e.finalTextureMappings.get(t2)[0];
-      double v2 = e.finalTextureMappings.get(t2)[1];
+
+      double u2 = e.finalTextureMapping.get(currentTriangle)[2][0];
+      double v2 = e.finalTextureMapping.get(currentTriangle)[2][1];
 
       double denominator = (y1 - y2) * (x0 - x2) + (x2 - x1) * (y0-y2);
 
@@ -179,8 +177,8 @@ public class WindowManager {
       v2 *= (1/w2);
 
       z0 *= (1/w0);
-      z1 *= (1/w0);
-      z2 *= (1/w0);
+      z1 *= (1/w1);
+      z2 *= (1/w2);
 
       double u = b0*u0 + b1*u1 + b2*u2;
       double v = b0*v0 + b1*v1 + b2*v2;
@@ -190,11 +188,25 @@ public class WindowManager {
       u /= wInterpolated;
       v /= wInterpolated;
       z /= wInterpolated;
+
       if(depthTest(px, py, z)){
          this.depthBuffer[px][py] = z;
-         this.colorBuffer[px][py] = (flag) ? 0xFFFF0000 : 0xFFFFFFFF;
+         if(e.texture != null){
+            int width = e.texture.getWidth();
+            int height = e.texture.getHeight();
+            u *= e.texture.getWidth();
+            v *= e.texture.getHeight();
+            if(u >= width || v >= height) return;
+            if(u < 0 || v < 0) return;
+            try{
+               this.colorBuffer[px][py] = e.texture.getRGB((int)u, (int)v);
+            } catch(Exception t){
+               System.out.println("out of bounds: ("+(int)u+", "+(int)v+")");
+            }
+         } else {
+            this.colorBuffer[px][py] = (flag) ? 0xFFFF0000 : 0xFFFFFFFF;
+         }
       }
-      // System.out.println("u: " + u + " v: " + v);
    }
     boolean depthTest(int x, int y, double z){
       if(!inScreenBounds(x, y)) return false;

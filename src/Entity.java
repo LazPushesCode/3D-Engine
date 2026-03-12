@@ -1,8 +1,14 @@
+import java.awt.image.BufferedImage;
+import java.io.File;
 import java.util.ArrayList;
+import javax.imageio.ImageIO;
+
 public class Entity {
     double[][] objectSpaceVectors;
     int [][] indices;
     double [][] textureMappings;
+    
+    double [][][] textureMapping; 
 
     double[][] worldSpaceVectors;
     ArrayList<double[]> viewSpaceVectors;
@@ -10,6 +16,10 @@ public class Entity {
     ArrayList<double[]> finalVectors;
     ArrayList<int[]> finalIndices;
     ArrayList<double[]> finalTextureMappings;
+
+    ArrayList<double[][]> finalTextureMapping;
+
+    BufferedImage texture;
 
     Matrix transformation;
 
@@ -23,6 +33,7 @@ public class Entity {
     Entity(double [][] vertices, int [][] ind, Matrix m){
         initializeVectorSpaces(vertices);
         initializeVariables();
+        initializeTextureMap();
         this.indices = ind;
         this.transformation = m;
         initializeLists();
@@ -48,6 +59,13 @@ public class Entity {
             }
         }
     }
+    void setTexture(String source){
+        try{
+            texture = ImageIO.read(new File(source));
+        } catch(Exception e){
+            e.printStackTrace();
+        }
+    }
     void initializeVectorSpaces(double [][] vertices){
         int rowLength = vertices.length;
         int colLength = vertices[0].length+1;
@@ -55,6 +73,7 @@ public class Entity {
         objectSpaceVectors = new double[rowLength][colLength];
         worldSpaceVectors = new double[rowLength][colLength];
         textureMappings = new double[rowLength][2];
+        
         for(int i = 0; i < rowLength; i++){
             textureMappings[i][0] = 0;
             textureMappings[i][1] = 0;
@@ -64,11 +83,15 @@ public class Entity {
             objectSpaceVectors[i][3] = 1;
         }
     }
+    void initializeTextureMap(){
+        textureMapping = new double[indices.length][3][2];
+    }
     void initializeLists(){
         viewSpaceVectors = new ArrayList<>();
         finalVectors = new ArrayList<>();
         finalIndices = new ArrayList<>();
         finalTextureMappings = new ArrayList<>();
+        finalTextureMapping = new ArrayList<>();
     }
     void cubeMesh(){
         double [][] vertices = {
@@ -103,19 +126,31 @@ public class Entity {
         };
         initializeVectorSpaces(vertices);
         initializeVariables();
-        textureMappings = new double[][]{
-            {0, 0},
-            {0.5, 0},
-            {0, 0.5},
-            {0.5, 0.5},
-            {1, 1},
-            {0.5, 1},
-            {1, 0.5},
-            {0.5, 0.5}
-        };
         this.indices = cubeIndices;
+        initializeTextureMap();
+        textureMappings = new double[][]{
+            {1, 1}, //{0.5,0.5,0.5}
+            {0.5, 1}, //{-0.5,0.5,0.5}
+            {1, 0}, //{0.5,0.5,-0.5}
+            {0, 0}, //{-0.5,0.5,-0.5}
+            {.5, 1}, //{0.5,-0.5,0.5}
+            {1, 1}, //{0.5, -0.5, -0.5}
+            {0.5, 0.5}, //{-0.5,-0.5,0.5}
+            {0, 1} //{-0.5,-0.5,-0.5}
+        };
+        for(int i = 0; i < 11; i+= 2){
+            applyTexture(i, new double[][]{{0, 0},{1, 0},{1, 1}});
+            applyTexture(i+1, new double[][]{{0, 0},{1, 1},{0, 1}});
+        }
         initializeLists();
         transformation = Matrix.Identity();
+    }
+    void applyTexture(int triangle, double[][] textureCords){
+        for(int i = 0; i < 3; i++){
+            for(int j = 0; j < 2; j++){
+                textureMapping[triangle][i][j] = textureCords[i][j];
+            }
+        }
     }
     Entity setWorldPosition(double givenx, double giveny, double givenz){
         x = givenx;
@@ -165,9 +200,11 @@ public class Entity {
                     int kPosition = finalIndices.get(i)[k];
                     if(finalVectors.get(jPosition)[1] > finalVectors.get(kPosition)[1]){
                         swapVertices(i, j, k);
+                        swapUV(i, j, k);
                     } else if(finalVectors.get(jPosition)[1] == finalVectors.get(kPosition)[1]){
                         if(finalVectors.get(jPosition)[0] < finalVectors.get(kPosition)[0]) {
                            swapVertices(i, j, k);
+                           swapUV(i, j, k);
                         }
                     }
                 }
@@ -180,12 +217,18 @@ public class Entity {
         finalIndices.get(row)[a] = finalIndices.get(row)[b];
         finalIndices.get(row)[b] = temp;
     }
+    void swapUV(int row, int a, int b){
+        double[] temp = finalTextureMapping.get(row)[a];
+        finalTextureMapping.get(row)[a] = finalTextureMapping.get(row)[b];
+        finalTextureMapping.get(row)[b] = temp;
+    }
     void invertObject(){
         for(int i = 0; i < objectSpaceVectors.length; i++){
             objectSpaceVectors[i][1] *= -1;
         }
     }
     void resetFrameData(){
+        // System.out.println("viewspace: " + viewSpaceVectors.get(0)[0]);
         viewSpaceVectors.clear();
         finalVectors.clear();
         finalIndices.clear();
