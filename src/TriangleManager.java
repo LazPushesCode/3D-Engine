@@ -21,27 +21,62 @@ public class TriangleManager {
         ArrayList<int[]> finalTriList = new ArrayList<>();
         ArrayList<double[][]> clipTextureList = new ArrayList<>();
         ArrayList<double[][]> finalTextureList = new ArrayList<>();
-
-        for(int i = 0; i < validIndices.size(); i++){
-            int outside = 0;
-            for(int j = 0; j < validIndices.get(i).length; j++){
-                int index = validIndices.get(i)[j];
-                double wm = m.finalVectors.get(index)[3];
-                double xm = m.finalVectors.get(index)[0];
-                double ym = m.finalVectors.get(index)[1];
-                double zm = m.finalVectors.get(index)[2];
-                if(xm < (-wm) || xm > wm){
-                    outside++;
-                } else if(ym < (-wm) || ym > wm) {
-                    outside++;
-                } else if(zm < (-wm)) {
-                    outside++;
+        for(int i = 0; i < validIndices.size(); i++){ //loop through triangle
+            boolean discard = false;
+            boolean clip = false;
+            for(int p = 0; p < 6; p++){ //loop through each plane
+                int pointsOutsidePlane = 0;
+                for(int j = 0; j < validIndices.get(i).length; j++){
+                    int index = validIndices.get(i)[j];
+                    double wm = m.finalVectors.get(index)[3];
+                    double xm = m.finalVectors.get(index)[0];
+                    double ym = m.finalVectors.get(index)[1];
+                    double zm = m.finalVectors.get(index)[2];
+                    switch(p){
+                        case 0: // outside left plane
+                            if(xm < -wm) {
+                                pointsOutsidePlane++;
+                            }
+                            break;
+                        case 1: // outside right plane
+                            if(xm > wm) {
+                                pointsOutsidePlane++;
+                            }
+                            break;
+                        case 2: // outside bottom plane
+                            if(ym < -wm) {
+                                pointsOutsidePlane++;
+                            }
+                            break;
+                        case 3: // outside top plane
+                            if(ym > wm) {
+                                pointsOutsidePlane++;
+                            }
+                            break;
+                        case 4: // outside near plane
+                            if(zm < 0) {
+                                pointsOutsidePlane++;
+                            }
+                            break;
+                        case 5: // outside far plane
+                            if(zm < wm) {
+                                pointsOutsidePlane++;
+                            }
+                            break;
+                    }
+                }
+                if(pointsOutsidePlane == 3){
+                    discard = true;
+                    break;
+                }
+                if(pointsOutsidePlane > 0){
+                    clip = true;
                 }
             }
-            if(outside == 3){
+            if(discard){
                 continue;
             }
-            if(outside > 0){
+            if(clip){
                 clipTriList.add(validIndices.get(i));
                 clipTextureList.add(validTextures.get(i));
                 continue;
@@ -49,12 +84,41 @@ public class TriangleManager {
             finalTriList.add(validIndices.get(i));
             finalTextureList.add(validTextures.get(i));
         }
+
+        // for(int i = 0; i < validIndices.size(); i++){
+        //     int outside = 0;
+        //     for(int j = 0; j < validIndices.get(i).length; j++){
+        //         int index = validIndices.get(i)[j];
+        //         double wm = m.finalVectors.get(index)[3];
+        //         double xm = m.finalVectors.get(index)[0];
+        //         double ym = m.finalVectors.get(index)[1];
+        //         double zm = m.finalVectors.get(index)[2];
+        //         if(xm < (-wm) || xm > wm){
+        //             outside++;
+        //         } else if(ym < (-wm) || ym > wm) {
+        //             outside++;
+        //         } else if(zm < (-wm)) {
+        //             outside++;
+        //         }
+        //     }
+        //     if(outside == 3){
+        //         continue;
+        //     }
+        //     if(outside > 0){
+        //         clipTriList.add(validIndices.get(i));
+        //         clipTextureList.add(validTextures.get(i));
+        //         continue;
+        //     }
+        //     finalTriList.add(validIndices.get(i));
+        //     finalTextureList.add(validTextures.get(i));
+        // }
         for(int i = 0; i < clipTriList.size(); i++){
             ArrayList<Integer> tri = new ArrayList<>();
             for(int j = 0; j < 3; j++){
                 tri.add(clipTriList.get(i)[j]);
             }
             TrianglePackage tp = clipTriangle(tri, m, clipTextureList.get(i));
+            if (tp == null) break;
             if(tp.vertices.size() < 3) continue;
             for(int j = 1; j < tp.vertices.size()-1; j++){
                 int[] t = {tp.vertices.get(0), tp.vertices.get(j), tp.vertices.get(j+1)};

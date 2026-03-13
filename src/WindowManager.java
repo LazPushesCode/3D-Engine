@@ -71,7 +71,6 @@ public class WindowManager {
             double z = m.finalVectors.get(i)[2];
             if(depthTest(x, y, z)){
                this.depthBuffer[x][y] = z;
-               this.colorBuffer[x][y] = 0xFFFF0000;
             }
          }
       }
