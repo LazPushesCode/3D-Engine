@@ -19,6 +19,7 @@ public class TriangleManager {
         
         ArrayList<int[]> clipTriList = new ArrayList<>();
         ArrayList<int[]> finalTriList = new ArrayList<>();
+        ArrayList<double[][]> clipTextureList = new ArrayList<>();
         ArrayList<double[][]> finalTextureList = new ArrayList<>();
 
         for(int i = 0; i < validIndices.size(); i++){
@@ -42,22 +43,23 @@ public class TriangleManager {
             }
             if(outside > 0){
                 clipTriList.add(validIndices.get(i));
+                clipTextureList.add(validTextures.get(i));
                 continue;
             }
             finalTriList.add(validIndices.get(i));
             finalTextureList.add(validTextures.get(i));
         }
-        for(int[] triangle : clipTriList){
+        for(int i = 0; i < clipTriList.size(); i++){
             ArrayList<Integer> tri = new ArrayList<>();
-            for(int i : triangle){
-                tri.add(i);
+            for(int j = 0; j < 3; j++){
+                tri.add(clipTriList.get(i)[j]);
             }
-            tri = clipTriangle(tri, m);
-            if(tri.size() < 3) continue;
-            for(int i = 1; i < tri.size()-1; i++){
-                int[] t = {tri.get(0), tri.get(i), tri.get(i+1)};
+            TrianglePackage tp = clipTriangle(tri, m, validTextures.get(i));
+            if(tp.vertices.size() < 3) continue;
+            for(int j = 1; j < tp.vertices.size()-1; j++){
+                int[] t = {tp.vertices.get(0), tp.vertices.get(j), tp.vertices.get(j+1)};
                 finalTriList.add(t);
-                finalTextureList.add(new double[][] {{0,0}, {0, 0}, {0, 0}});
+                finalTextureList.add(new double[][] {tp.uvs.get(0), tp.uvs.get(j), tp.uvs.get(j+1)});
             }
         }
         if(!finalTriList.isEmpty()) {
@@ -106,37 +108,49 @@ public class TriangleManager {
         };
         return n[0]*v[0] + n[1]*v[1] + n[2]*v[2];
     }
-    static ArrayList<Integer> clipTriangle(ArrayList<Integer> v, Entity m){
-        ArrayList<Integer> vertices = v;
+    static TrianglePackage clipTriangle(ArrayList<Integer> t, Entity m, double[][] textureCords){
+        TrianglePackage tp = new TrianglePackage();
+        tp.vertices = t;
+        for(int i = 0; i < textureCords.length; i++){
+            tp.uvs.add(textureCords[i].clone());
+        }
         for(int p = 0; p < 5; p++){
-            ArrayList<Integer> output = new ArrayList<>();
-            for(int i = 0; i < vertices.size(); i++){
-                    int v1 = vertices.get(i);
-                    int v2 = vertices.get((i+1) % vertices.size());
-                    boolean e1 = isInPlane(p, m.finalVectors.get(v1));
-                    boolean e2 = isInPlane(p, m.finalVectors.get(v2));
+            ArrayList<Integer> pointOutput = new ArrayList<>();
+            ArrayList<double[]> uvOutput = new ArrayList<>();
+            for(int i = 0; i < tp.vertices.size(); i++){
+                    int t1 = tp.vertices.get(i);
+                    int t2 = tp.vertices.get((i+1) % tp.vertices.size());
+                    double[] uv1 = tp.uvs.get(i);
+                    double[] uv2 = tp.uvs.get((i+1) % tp.uvs.size());
+                    boolean e1 = isInPlane(p, m.finalVectors.get(t1));
+                    boolean e2 = isInPlane(p, m.finalVectors.get(t2));
                     
                     //when cliping a triangle, we need to ensure the uv mappings remain consistent
                     if(e1 && e2){
-                        output.add(v2);
+                        pointOutput.add(t2);
+                        uvOutput.add(tp.uvs.get((i+1) % tp.uvs.size()).clone());
                     } else if(e1){
-                        m.finalVectors.add(calculateIntersection(m.finalVectors.get(v1), m.finalVectors.get(v2), p));
-                        m.finalTextureMappings.add(new double[]{0,0});
-                        output.add(m.finalVectors.size()-1);
+                        double[] result = calculateIntersection(m.finalVectors.get(t1), m.finalVectors.get(t2), uv1, uv2, p);
+                        m.finalVectors.add(new double[]{result[0],result[1], result[2], result[3]});
+                        pointOutput.add(m.finalVectors.size()-1);
+                        uvOutput.add(new double[]{result[4], result[5]});
                     } else if(e2){
-                        m.finalVectors.add(calculateIntersection(m.finalVectors.get(v1), m.finalVectors.get(v2), p));
-                        m.finalTextureMappings.add(new double[]{0,0});
-                        output.add(m.finalVectors.size()-1);
-                        output.add(v2);
+                        double[] result = calculateIntersection(m.finalVectors.get(t1), m.finalVectors.get(t2), uv1, uv2, p);
+                        m.finalVectors.add(new double[]{result[0],result[1], result[2], result[3]});
+                        pointOutput.add(m.finalVectors.size()-1);
+                        uvOutput.add(new double[]{result[4], result[5]});
+                        pointOutput.add(t2);
+                        uvOutput.add(tp.uvs.get((i+1) % tp.uvs.size()).clone());
                     } 
                 }
-                if(output.isEmpty()){
+                if(pointOutput.isEmpty()){
                     System.out.println("output is empty");
-                    return output;
+                    return null;
                 }
-                vertices = output;
+                tp.vertices = pointOutput;
+                tp.uvs = uvOutput;
             }
-        return vertices;
+        return tp;
     }
     static boolean isInPlane(int plane, double[] v){
         switch (plane) {
@@ -154,7 +168,7 @@ public class TriangleManager {
                 throw new AssertionError();
         }
     }
-    static double[] calculateIntersection(double[] p1, double[] p2, int plane){
+    static double[] calculateIntersection(double[] p1, double[] p2, double[] uv1, double[] uv2, int plane){
         double fp1;
         double fp2;
         double t;
@@ -187,10 +201,12 @@ public class TriangleManager {
                 throw new AssertionError();
         }
         t = fp1/(fp1 - fp2);
-        double[] intersection = new double[4];
+        double[] intersection = new double[6];
         for(int i = 0; i < 4; i++){
             intersection[i] = p1[i] + t*(p2[i] - p1[i]);
         }
+        intersection[4] = uv1[0] + t*(uv2[0] - uv1[0]);
+        intersection[5] = uv1[1] + t*(uv2[1] - uv1[1]);
         return intersection;
     }
 }

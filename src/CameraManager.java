@@ -69,9 +69,7 @@ public class CameraManager {
     void convertToClipSpace(Entity m){
         for(int i = 0; i < m.viewSpaceVectors.size(); i++){
             double clip[] = (projectionMatrix.vectorTransformation(m.viewSpaceVectors.get(i)));
-            m.finalVectors.add(clip);
-            m.finalTextureMappings.add(m.textureMappings[i]);
-            
+            m.finalVectors.add(clip);            
         }
     }
     CameraManager setCameraPosition(double x, double y, double z){

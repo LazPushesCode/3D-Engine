@@ -55,7 +55,7 @@ public class WindowManager {
         for(int i = 0; i < width; i++){
             for(int j = 0; j < length; j++){
                 colorBuffer[i][j] = 0;
-                depthBuffer[i][j] = Float.POSITIVE_INFINITY;
+                depthBuffer[i][j] = 0;
             }
         }
     }
@@ -190,7 +190,6 @@ public class WindowManager {
       z /= wInterpolated;
 
       if(depthTest(px, py, z)){
-         this.depthBuffer[px][py] = z;
          if(e.texture != null){
             int width = e.texture.getWidth();
             int height = e.texture.getHeight();
@@ -198,19 +197,21 @@ public class WindowManager {
             v *= e.texture.getHeight();
             if(u >= width || v >= height) return;
             if(u < 0 || v < 0) return;
+            this.depthBuffer[px][py] = z;
             try{
                this.colorBuffer[px][py] = e.texture.getRGB((int)u, (int)v);
             } catch(Exception t){
                System.out.println("out of bounds: ("+(int)u+", "+(int)v+")");
             }
          } else {
+            this.depthBuffer[px][py] = z;
             this.colorBuffer[px][py] = (flag) ? 0xFFFF0000 : 0xFFFFFFFF;
          }
       }
    }
     boolean depthTest(int x, int y, double z){
       if(!inScreenBounds(x, y)) return false;
-      return (z <= this.depthBuffer[x][y]);
+      return (z >= this.depthBuffer[x][y]);
    }
     int[] interpolate(int x1, int y1, int x2, int y2) {
         if (y1 == y2) return new int[0];

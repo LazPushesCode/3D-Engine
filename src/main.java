@@ -6,29 +6,31 @@ public class main{
         CameraManager cm = new CameraManager(wm.width, wm.length,100);
         InputManager im = new InputManager();
 
-        cm.setCameraPosition(1, 0, 0);
+        cm.setCameraPosition(0, 0, 0);
 
         Entity cube = new Entity();
         Entity cube2 = new Entity();
         cube.cubeMesh();
         cube2.cubeMesh();
         cube.setTexture("C:\\Users\\yalfo\\3D-Engine\\resources\\assets\\11635.png");
-        System.out.println("w: " + cube.texture.getWidth() + " h: " + cube.texture.getHeight());
-        cube.translate(0,0,4);
-        cube2.translate(1,0,4);
+        cube2.setTexture("C:\\Users\\yalfo\\3D-Engine\\resources\\assets\\11635.png");
+        
+        cube.translate(3,0,6);
+        cube.scale(0.5, 0.5, 0.5);
+        cube2.translate(0, 0, 3);
+        cube2.scale(-0.3, -0.3, -0.3);
+        cube2.rotatex(30);
         wm.openWindow();
         wm.addInputListener(im);
         ArrayList<Entity> entityList = new ArrayList<>();
         entityList.add(cube);
-        // entityList.add(cube2);
+        entityList.add(cube2);
         long currentTime = (System.currentTimeMillis());
         long previousTime = 0;
         double deltaTime = 0;
         while(true){
             try {
                 deltaTime = (currentTime - previousTime)%1000;
-                cube.translate(0, 0, 0);
-                // cube2.translate(0, 0, 0);
                 wm.clearScreen();
                 cm.pollInput(im, deltaTime);
                 cm.updateCameraMatrix();
@@ -45,6 +47,7 @@ public class main{
         }
     }
     static void renderEntity(CameraManager cm, WindowManager wm, Entity et){
+      et.applyTransformationValues();
       et.convertToWorldSpace();
       cm.convertToViewSpace(et);
       TriangleManager.cullTriangles(et, cm);
