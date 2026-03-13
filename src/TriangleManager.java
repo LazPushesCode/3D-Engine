@@ -54,7 +54,7 @@ public class TriangleManager {
             for(int j = 0; j < 3; j++){
                 tri.add(clipTriList.get(i)[j]);
             }
-            TrianglePackage tp = clipTriangle(tri, m, validTextures.get(i));
+            TrianglePackage tp = clipTriangle(tri, m, clipTextureList.get(i));
             if(tp.vertices.size() < 3) continue;
             for(int j = 1; j < tp.vertices.size()-1; j++){
                 int[] t = {tp.vertices.get(0), tp.vertices.get(j), tp.vertices.get(j+1)};

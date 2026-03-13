@@ -16,10 +16,7 @@ public class main{
         cube2.setTexture("C:\\Users\\yalfo\\3D-Engine\\resources\\assets\\11635.png");
         
         cube.translate(3,0,6);
-        cube.scale(0.5, 0.5, 0.5);
-        cube2.translate(0, 0, 3);
-        cube2.scale(-0.3, -0.3, -0.3);
-        cube2.rotatex(30);
+        cube2.translate(0, 0, 2);
         wm.openWindow();
         wm.addInputListener(im);
         ArrayList<Entity> entityList = new ArrayList<>();
