@@ -25,6 +25,8 @@ public class Entity {
     double yaw, pitch, roll;
     double xSize, ySize, zSize;
 
+    int defaultColor = 0xFFFFFF;
+
     Entity(){
 
     }

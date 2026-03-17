@@ -27,7 +27,7 @@ public class WindowManager {
         for(int i = 0; i < width; i++){
             for(int j = 0; j < length; j++){
                 if(colorBuffer[i][j] != 0){
-                    panel.setPixel(i,j, (int)colorBuffer[i][j]);
+                    panel.setPixel(i,j, colorBuffer[i][j]);
                 }
             }
         }
@@ -132,11 +132,6 @@ public class WindowManager {
       }
    }
    void sampleTexture(Entity e, int t0, int t1, int t2, int px, int py, int currentTriangle, boolean flag){
-      // if(t0 == 2){
-      //    if(e.finalTextureMappings.get(t0)[0] != e.finalTextureMapping.get(currentTriangle)[0][0]){
-      //       System.out.println("inaccuracies: in tri: " + currentTriangle + " " + (e.finalTextureMappings.get(t0)[0]) + " " + (e.finalTextureMapping.get(currentTriangle)[0][0]));
-      //    }
-      // }
       double x0 = e.finalVectors.get(t0)[0];
       double y0 = e.finalVectors.get(t0)[1];
       double z0 = e.finalVectors.get(t0)[2];
@@ -204,7 +199,7 @@ public class WindowManager {
             }
          } else {
             this.depthBuffer[px][py] = z;
-            this.colorBuffer[px][py] = (flag) ? 0xFFFF0000 : 0xFFFFFFFF;
+            this.colorBuffer[px][py] = (flag) ? 0xFF00FF : e.defaultColor;
          }
       }
    }

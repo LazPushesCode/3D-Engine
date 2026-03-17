@@ -6,22 +6,26 @@ public class main{
         CameraManager cm = new CameraManager(wm.width, wm.length,100);
         InputManager im = new InputManager();
 
-        cm.setCameraPosition(0, 0, 0);
+        cm.setCameraPosition(0, 1, 0);
 
-        Entity cube = new Entity();
-        Entity cube2 = new Entity();
-        cube.cubeMesh();
-        cube2.cubeMesh();
-        cube.setTexture("C:\\Users\\yalfo\\3D-Engine\\resources\\assets\\11635.png");
-        cube2.setTexture("C:\\Users\\yalfo\\3D-Engine\\resources\\assets\\11635.png");
+        // Entity cube = new Entity();
+        // Entity cube2 = new Entity();
+    
+        // cube.setTexture("C:\\Users\\yalfo\\3D-Engine\\resources\\assets\\11635.png");
+        // cube2.setTexture("C:\\Users\\yalfo\\3D-Engine\\resources\\assets\\11635.png");
         
-        cube.translate(3,0,6);
-        cube2.translate(0, 0, 2);
         wm.openWindow();
         wm.addInputListener(im);
         ArrayList<Entity> entityList = new ArrayList<>();
-        entityList.add(cube);
-        entityList.add(cube2);
+
+        Entity wall1 = new Entity();wall1.cubeMesh();
+        wall1.translate(0,-1,2);
+
+       
+        wall1.setTexture("C:\\Users\\yalfo\\3D-Engine\\resources\\assets\\11635.png");
+
+        entityList.add(wall1);
+
         long currentTime = (System.currentTimeMillis());
         long previousTime = 0;
         double deltaTime = 0;
@@ -32,6 +36,7 @@ public class main{
                 cm.pollInput(im, deltaTime);
                 cm.updateCameraMatrix();
                 for(Entity et : entityList){
+                    // et.rotatex(1).rotatey(1).translate(0,0.001,0);
                     renderEntity(cm, wm, et);
                 }
                 wm.updateScreen();

@@ -1,3 +1,4 @@
+
 public class CameraManager {
     double FOV;
     double aspect;
@@ -25,30 +26,15 @@ public class CameraManager {
         this.aspect = (double)windowWidth/windowLength;
         this.near = 0.1;
         this.far = 1000;
-        this.speed = 0.001;
+        this.speed = 0.005;
         viewMatrix = Matrix.Identity();
         projectionMatrix = Matrix.Identity();
         updateCameraMatrix();
     }
     void updateViewMatrix(){
-        viewMatrix = Matrix.rotatex(pitch).multiply(Matrix.rotatey(yaw)).multiply(Matrix.translate(-x,-y,-z));
-        // System.out.print("pos:       (" + x + ", " + y + ", " + z + ")");
-        // System.out.println(" (" + pitch + ", " + yaw + ", " + roll + ")");
-        // viewMatrix = Matrix.translate(-x,-y,-z);
-        // viewMatrix = viewMatrix.multiply(Matrix.rotatey(yaw));
-        // viewMatrix.printMatrix();
-    }
-    CameraManager translate(double givenx, double giveny, double givenz){
-        this.x += givenx;
-        this.y += giveny;
-        this.z += givenz;
-        viewMatrix = viewMatrix.multiply(Matrix.translate(-x, -y, -z));
-        return this;
-    }
-    CameraManager rotatey(double degree){
-        yaw += degree;
-        viewMatrix = viewMatrix.multiply(Matrix.rotatey(yaw));
-        return this;
+        viewMatrix = Matrix.rotatex(pitch)
+        .multiply(Matrix.rotatey(-yaw))
+        .multiply(Matrix.translate(-x,-y,-z));
     }
     void updateProjectionMatrix(){
         double t = 1/Math.tan(FOV/2);
@@ -80,52 +66,38 @@ public class CameraManager {
         return this;
     }
     void pollInput(InputManager im, double deltaTime){
-        double[] forward = computeForward();
-        // System.out.println();
-        // for(int i = 0; i < forward.length; i++){
-        //     System.out.print(forward[i] + " ");
-        // }
-        forward = normalize(forward);
-        // System.out.println(" " + pitch + " " + yaw + " x: " + x + " y: " + y + " z: " + z);
-        double[] right = computeRight();
-        right = normalize(right);
-        if(im.ru){
-            this.pitch += .3 * deltaTime;
-        }
-        if(im.rd){
-            this.pitch -= .3 * deltaTime;
-        }
-        if(im.rl){
-            this.yaw += .3 * deltaTime;
-        }
-        if(im.rr){
-            this.yaw -= .3 * deltaTime;
-        }
+        if(im.ru)this.pitch += .3 * deltaTime;
+        if(im.rd)this.pitch -= .3 * deltaTime;
+        if(im.rl)this.yaw -= .3 * deltaTime;
+        if(im.rr)this.yaw += .3 * deltaTime;
+        clampPitch();
+        double[] forward = normalize(computeForward());
+        double[] worldUp = {0,1,0};
+        double[] right = normalize(crossProduct(worldUp,forward));
         if(im.forward){
-            z += forward[0] * speed * deltaTime;
-            x += forward[2] * speed * deltaTime;
+            x += forward[0] * speed * deltaTime;
+            z += forward[2] * speed * deltaTime;
         }
         if(im.backward){
-            z -= forward[0] * speed * deltaTime;
-            x -= forward[2] * speed * deltaTime;
+            x -= forward[0] * speed * deltaTime;
+            z -= forward[2] * speed * deltaTime;
         }
         if(im.left){
-            z -= right[0] * speed * deltaTime;
-            x += right[2] * speed * deltaTime;
+            x -= right[0] * speed * deltaTime;
+            z -= right[2] * speed * deltaTime;
         }
         if(im.right){
-            z += right[0] * speed * deltaTime;
-            x -= right[2] * speed * deltaTime;
+            x += right[0] * speed * deltaTime;
+            z += right[2] * speed * deltaTime;
         }
-        clampPitch();
     }
     double[] computeForward(){
         double pitchRadian = Math.toRadians(pitch);
         double yawRadian = Math.toRadians(yaw);
         return new double[] {
-            Math.cos(pitchRadian) * Math.cos(yawRadian),
+            Math.sin(yawRadian) * Math.cos(pitchRadian),
             0,
-            Math.cos(pitchRadian) * Math.sin(yawRadian)
+            Math.cos(yawRadian) * Math.cos(pitchRadian)
         };
     }
     double[] computeRight(){
