@@ -90,6 +90,12 @@ public class CameraManager {
             x += right[0] * speed * deltaTime;
             z += right[2] * speed * deltaTime;
         }
+        if(im.up){
+            y += speed * deltaTime;
+        }
+        if(im.down){
+            y -= speed * deltaTime;
+        }
     }
     double[] computeForward(){
         double pitchRadian = Math.toRadians(pitch);
