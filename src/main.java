@@ -1,8 +1,7 @@
 
-import java.util.ArrayList;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-
 
 public class main{
     public static void main(String[] args){
@@ -21,7 +20,7 @@ public class main{
         world.addCamera(cm);
         Entity cube = new Entity();
         cube.cubeMesh();
-        cube.setWorldPosition(0, 1, 0);
+        cube.setWorldPosition(0, 2, 2);
         world.addEntity(cube);
 
         long currentTime = (System.currentTimeMillis());
@@ -31,24 +30,13 @@ public class main{
 
         int cores = Runtime.getRuntime().availableProcessors();
         ExecutorService tilePool = Executors.newFixedThreadPool(cores);
-        ArrayList<Tile> tiles = new ArrayList<>();
-        int xAddend = wm.width/4;
-        int yAddend = wm.length/2;
-        int xOffset = xAddend;
-        int yOffset = yAddend;
-        for(int i = 0; i < 8; i++){
-            tiles.add(new Tile(xOffset, yOffset));
-            System.out.println("Tile created with offsets: " 
-            + tiles.get(i).xOffset + " " + tiles.get(i).yOffset);
-            xOffset += xAddend;
-            if(xOffset > wm.width){
-                xOffset = xAddend;
-                yOffset += yAddend;
-            }
-        }
+        TileManager tm = new TileManager();
+        tm.allocateTiles(2, 4, wm);
         
-        cube.setTexture("C:\\Users\\yalfo\\3D-Engine\\resources\\assets\\11635.png");
-        
+        cube.setTexture("C:\\Users\\lazar\\3D-Engine\\resources\\assets\\11635.png");
+        int frames = 0;
+        long lastFpsTime = System.currentTimeMillis();
+
         while(true){
             try {
                 deltaTime = (currentTime - previousTime)%1000;
@@ -56,10 +44,31 @@ public class main{
                 cm.pollInput(im, deltaTime);
                 cm.updateCameraMatrix();
                 for(Entity et : world.entities.values()){
-                    renderEntity(world.cameras.get(0), wm, et);
+                    renderEntity(world.cameras.get(0), wm, tm, et);
                 }
+                CountDownLatch latch = new CountDownLatch(tm.tiles.size());
+                for(int i = 0; i < tm.tiles.size(); i++){
+                    final int index = i;
+                    tilePool.execute(() -> {
+                        try {
+                            wm.renderTile(cm, tm.tiles.get(index));
+                        } finally {
+                            latch.countDown();
+                        }
+                    });
+                }
+                latch.await();
                 wm.updateScreen();
-                Thread.sleep(16);
+                tm.emptyTiles();
+                Thread.sleep(8);
+
+                frames++;
+                long now = System.currentTimeMillis();
+                if(now - lastFpsTime >= 1000){
+                    System.out.println("FPS: " + frames);
+                    frames = 0;
+                    lastFpsTime = now;
+                }
                 previousTime = currentTime;
                 currentTime = (System.currentTimeMillis());
             } catch (Exception e) {
@@ -67,13 +76,13 @@ public class main{
             }
         }
     }
-    static void renderEntity(CameraManager cm, WindowManager wm, Entity et){
+    static void renderEntity(CameraManager cm, WindowManager wm, TileManager tm, Entity et){
       et.applyTransformationValues();
       et.convertToWorldSpace();
       cm.convertToViewSpace(et);
       TriangleManager.cullTriangles(et, cm);
-      wm.convertToNDC(et);
-      wm.renderOnScreen(cm, et);
+      wm.convertToNDC(et, tm);
+    //   wm.renderObject(cm, et);
       et.resetFrameData();
    }
 }

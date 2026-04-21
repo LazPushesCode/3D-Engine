@@ -84,34 +84,6 @@ public class TriangleManager {
             finalTriList.add(validIndices.get(i));
             finalTextureList.add(validTextures.get(i));
         }
-
-        // for(int i = 0; i < validIndices.size(); i++){
-        //     int outside = 0;
-        //     for(int j = 0; j < validIndices.get(i).length; j++){
-        //         int index = validIndices.get(i)[j];
-        //         double wm = m.finalVectors.get(index)[3];
-        //         double xm = m.finalVectors.get(index)[0];
-        //         double ym = m.finalVectors.get(index)[1];
-        //         double zm = m.finalVectors.get(index)[2];
-        //         if(xm < (-wm) || xm > wm){
-        //             outside++;
-        //         } else if(ym < (-wm) || ym > wm) {
-        //             outside++;
-        //         } else if(zm < (-wm)) {
-        //             outside++;
-        //         }
-        //     }
-        //     if(outside == 3){
-        //         continue;
-        //     }
-        //     if(outside > 0){
-        //         clipTriList.add(validIndices.get(i));
-        //         clipTextureList.add(validTextures.get(i));
-        //         continue;
-        //     }
-        //     finalTriList.add(validIndices.get(i));
-        //     finalTextureList.add(validTextures.get(i));
-        // }
         for(int i = 0; i < clipTriList.size(); i++){
             ArrayList<Integer> tri = new ArrayList<>();
             for(int j = 0; j < 3; j++){

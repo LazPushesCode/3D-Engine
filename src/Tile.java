@@ -1,12 +1,28 @@
 import java.util.ArrayList;
-
+import java.util.HashMap;
 public class Tile {
-    int xOffset, yOffset;
-    ArrayList <double []> vectorList;
+    double xOffset, yOffset, tileWidth, tileLength;
+    HashMap <Integer, double []> vectorList;
     ArrayList<int []> visibleTriangleList;
-    Tile(int x, int y){
+    Tile(double x, double y, double w, double l){
         xOffset = x;
         yOffset = y;
+        tileWidth = w;
+        tileLength = l;
         visibleTriangleList = new ArrayList<>();
+        vectorList = new HashMap<>();
+    }
+    void emptyTileData(){
+        vectorList.clear();
+        visibleTriangleList.clear();
+    }
+    void displayTileData(){
+        for(int[] triangle : visibleTriangleList){
+            for(int v : triangle){
+                System.out.print(" v: " + v);
+                System.out.print(" x: " + vectorList.get(v)[0] + " y: " + vectorList.get(v)[1]);
+            }   
+            System.out.println();
+        }
     }
 }
