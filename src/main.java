@@ -5,7 +5,7 @@ import java.util.concurrent.Executors;
 
 public class main{
     public static void main(String[] args){
-        WindowManager wm = new WindowManager(1200, 600);
+        WindowManager wm = new WindowManager(900, 600);
         CameraManager cm = new CameraManager(wm.width, wm.length,100);
         InputManager im = new InputManager();
 
@@ -51,7 +51,7 @@ public class main{
                     final int index = i;
                     tilePool.execute(() -> {
                         try {
-                            System.out.println("Tile " + index + " handled by " + Thread.currentThread().getName());
+                            // System.out.println("Tile " + index + " handled by " + Thread.currentThread().getName());
                             wm.renderTile(cm, tm.tiles.get(index), world);
                         } finally {
                             latch.countDown();
@@ -59,9 +59,9 @@ public class main{
                     });
                 }
                 latch.await();
-                wm.updateScreen();
+                wm.updateScreen(tm);
                 tm.emptyTiles();
-                Thread.sleep(16);
+                Thread.sleep(8);
 
                 frames++;
                 long now = System.currentTimeMillis();

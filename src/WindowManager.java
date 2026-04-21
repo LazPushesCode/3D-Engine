@@ -23,7 +23,8 @@ public class WindowManager {
         frame.setVisible(true);
         panel.requestFocusInWindow();
     }
-    void updateScreen(){
+    void updateScreen(TileManager tm){
+      combineColorBuffers(tm);
         for(int i = 0; i < width; i++){
             for(int j = 0; j < length; j++){
                 if(colorBuffer[i][j] != 0){
@@ -210,15 +211,48 @@ public class WindowManager {
             v *= e.texture.getHeight();
             if(u >= width || v >= height) return;
             if(u < 0 || v < 0) return;
+            
+            int xLocal = px - (int)(t.xOffset - t.tileWidth)-1;
+            int yLocal = py - (int)(t.yOffset - t.tileLength)-1;
+
+            if (xLocal < 0 || xLocal >= (int)t.tileWidth || yLocal < 0 || yLocal >= (int)t.tileLength) {
+               return; 
+            }
+
             this.depthBuffer[px][py] = z;
+            t.localDepthBuffer[xLocal][yLocal] = z;
             try{
                this.colorBuffer[px][py] = e.texture.getRGB((int)u, (int)v);
+               t.localColorBuffer[xLocal][yLocal] = e.texture.getRGB((int)u, (int)v);
+               
             } catch(Exception err){
                System.out.println("out of bounds: ("+(int)u+", "+(int)v+")");
             }
          } else {
+            int xLocal = px - (int)(t.xOffset - t.tileWidth);
+            int yLocal = py - (int)(t.yOffset - t.tileLength);
+
             this.depthBuffer[px][py] = z;
             this.colorBuffer[px][py] = (flag) ? 0xFF00FF : e.defaultColor;
+
+            t.localDepthBuffer[xLocal][yLocal] = z;
+            t.localColorBuffer[xLocal][yLocal] = (flag) ? 0xFF00FF : e.defaultColor;
+         }
+      }
+   }
+   void combineColorBuffers(TileManager tm){
+      int iStart = 0;
+      int jStart = 0;
+      for(Tile t : tm.tiles){
+         for(int i = 0; i < t.tileWidth; i++){
+            for(int j = 0; j < t.tileLength; j++){
+               colorBuffer[i+iStart][j+jStart] = t.localColorBuffer[i][j];
+            }
+         }
+         iStart += t.tileWidth;
+         if(iStart >= width){
+            iStart = 0;
+            jStart += t.tileLength;
          }
       }
    }
