@@ -13,6 +13,7 @@ public class Scene {
     }
     void addEntity(Entity et){
         entities.put(entityCount, et);
+        et.ID = entityCount;
         entityCount++;
     }
     void addCamera(CameraManager cm){

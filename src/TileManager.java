@@ -52,10 +52,13 @@ public class TileManager {
 
             for(int r = minRow; r <= maxRow; r++){
                 for(int c = minCol; c <= maxCol; c++){
+                    int index = (numCols * r) + c;
                     int[] indices = e.finalIndices.get(i);
-                    tiles.get((numCols*r) + c).visibleTriangleList.add(indices);
+                    tiles.get(index).visibleTriangleList.add(indices);
+                    tiles.get(index).textureMapping.add(e.finalTextureMapping.get(i));
+                    tiles.get(index).modelTextureID.add(e.ID);
                     for (int indice : indices) {
-                        tiles.get((numCols*r) + c).vectorList.put(indice, e.finalVectors.get(indice));   
+                        tiles.get(index).vectorList.put(indice, e.finalVectors.get(indice));   
                     }
                 }
             }

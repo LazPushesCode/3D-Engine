@@ -27,6 +27,8 @@ public class Entity {
 
     int defaultColor = 0xFFFFFF;
 
+    int ID;
+
     Entity(){
 
     }

@@ -51,7 +51,8 @@ public class main{
                     final int index = i;
                     tilePool.execute(() -> {
                         try {
-                            wm.renderTile(cm, tm.tiles.get(index));
+                            System.out.println("Tile " + index + " handled by " + Thread.currentThread().getName());
+                            wm.renderTile(cm, tm.tiles.get(index), world);
                         } finally {
                             latch.countDown();
                         }
@@ -60,7 +61,7 @@ public class main{
                 latch.await();
                 wm.updateScreen();
                 tm.emptyTiles();
-                Thread.sleep(8);
+                Thread.sleep(16);
 
                 frames++;
                 long now = System.currentTimeMillis();

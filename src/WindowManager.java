@@ -67,7 +67,7 @@ public class WindowManager {
     void clearScreen(){
         panel.clear(0xFF000000); // opaque black
     }
-    void renderTile(CameraManager c, Tile t){
+    void renderTile(CameraManager c, Tile t, Scene s){
       for (double[] vec : t.vectorList.values()) {
          if (vec[1] <= this.length && vec[1] >= -(this.length)) {
             int x = (int)vec[0];
@@ -105,9 +105,9 @@ public class WindowManager {
          System.arraycopy(xValues2, 0, combinedArray, xValues1.length, xValues2.length);
         int left = decideWhichIsLeft(combinedArray, xValues3);
          if(left == 0){
-            drawTileLines((int)t.vectorList.get(pos1)[1], (int)t.vectorList.get(pos3)[1], combinedArray, xValues3, t.vectorList.get(pos1)[2], t, i);
+            drawTileLines((int)t.vectorList.get(pos1)[1], (int)t.vectorList.get(pos3)[1], combinedArray, xValues3, t.vectorList.get(pos1)[2], t, i, s);
          } else {
-            drawTileLines((int)t.vectorList.get(pos1)[1], (int)t.vectorList.get(pos3)[1], xValues3, combinedArray, t.vectorList.get(pos1)[2], t, i);
+            drawTileLines((int)t.vectorList.get(pos1)[1], (int)t.vectorList.get(pos3)[1], xValues3, combinedArray, t.vectorList.get(pos1)[2], t, i, s);
          }
          } catch (Exception e){
             System.out.println("error: ");
@@ -115,7 +115,7 @@ public class WindowManager {
          }
       }
    }
-   void drawTileLines(int yStart, int yEnd, int[] xLeftValues, int[] xRightValues, double z, Tile t, int currentIndice){
+   void drawTileLines(int yStart, int yEnd, int[] xLeftValues, int[] xRightValues, double z, Tile t, int currentIndice, Scene s){
       int length = Math.abs(yEnd - yStart);
       // if(xLeftValues.length != xRightValues.length) return;
       for(int i = 0; i < length; i++){
@@ -123,12 +123,12 @@ public class WindowManager {
             for(int j = xLeftValues[i]; j < xRightValues[i]; j++){
                try {
                   if(depthTest(j, i+yStart, z)){
-                     // sampleTexture(t, 
-                     //    t.visibleTriangleList.get(currentIndice)[0], 
-                     //    t.visibleTriangleList.get(currentIndice)[1], 
-                     //    t.visibleTriangleList.get(currentIndice)[2],
-                     //    j, i+yStart, currentIndice, ((j==xLeftValues[i] || j == xRightValues[i]-1)));
-                        this.colorBuffer[j][i+yStart] = ((j==xLeftValues[i] || j == xRightValues[i]-1)) ? 0xFFFF0000 : 0xFFFFFFFF;
+                     sampleTextureOnTile(t, s.entities.get(t.modelTextureID.get(currentIndice)), 
+                        t.visibleTriangleList.get(currentIndice)[0], 
+                        t.visibleTriangleList.get(currentIndice)[1], 
+                        t.visibleTriangleList.get(currentIndice)[2],
+                        j, i+yStart, currentIndice, ((j==xLeftValues[i] || j == xRightValues[i]-1)));
+                        // this.colorBuffer[j][i+yStart] = ((j==xLeftValues[i] || j == xRightValues[i]-1)) ? 0xFFFF0000 : 0xFFFFFFFF;
                   } 
                } catch (Exception e) {
                   e.printStackTrace();
@@ -149,6 +149,78 @@ public class WindowManager {
       //    this.depthBuffer[(int)(t.xOffset-1)][i] = 0;
       //    this.colorBuffer[(int)(t.xOffset-1)][i] = 0xFFFF0000;
       // }
+   }
+    void sampleTextureOnTile(Tile t, Entity e, int t0, int t1, int t2, int px, int py, int currentTriangle, boolean flag){
+      double x0 = t.vectorList.get(t0)[0];
+      double y0 = t.vectorList.get(t0)[1];
+      double z0 = t.vectorList.get(t0)[2];
+      double w0 = t.vectorList.get(t0)[3];
+
+      double u0 = t.textureMapping.get(currentTriangle)[0][0];
+      double v0 = t.textureMapping.get(currentTriangle)[0][1];
+
+      double x1 = t.vectorList.get(t1)[0];
+      double y1 = t.vectorList.get(t1)[1];
+      double z1 = t.vectorList.get(t1)[2];
+      double w1 = t.vectorList.get(t1)[3];
+
+      double u1 = t.textureMapping.get(currentTriangle)[1][0];
+      double v1 = t.textureMapping.get(currentTriangle)[1][1];
+
+      double x2 = t.vectorList.get(t2)[0];
+      double y2 = t.vectorList.get(t2)[1];
+      double z2 = t.vectorList.get(t2)[2];
+      double w2 = t.vectorList.get(t2)[3];
+
+      double u2 = t.textureMapping.get(currentTriangle)[2][0];
+      double v2 = t.textureMapping.get(currentTriangle)[2][1];
+
+      double denominator = (y1 - y2) * (x0 - x2) + (x2 - x1) * (y0-y2);
+
+      double b0 = ((y1-y2)*(px-x2)+(x2-x1)*(py-y2))/denominator;
+      double b1 = ((y2-y0)*(px-x2)+(x0-x2)*(py-y2))/denominator;
+      double b2 = 1 - b1 - b0;
+
+      u0 *= (1/w0);
+      u1 *= (1/w1);
+      u2 *= (1/w2);
+
+      v0 *= (1/w0);
+      v1 *= (1/w1);
+      v2 *= (1/w2);
+
+      z0 *= (1/w0);
+      z1 *= (1/w1);
+      z2 *= (1/w2);
+
+      double u = b0*u0 + b1*u1 + b2*u2;
+      double v = b0*v0 + b1*v1 + b2*v2;
+      double z = b0 *z0 + b1*z1 + b2*z2;
+      double wInterpolated = b0*(1/w0) + b1*(1/w1) + b2*(1/w2);
+
+      u /= wInterpolated;
+      v /= wInterpolated;
+      z /= wInterpolated;
+      
+      if(depthTest(px, py, z)){
+         if(e.texture != null){
+            int width = e.texture.getWidth();
+            int height = e.texture.getHeight();
+            u *= e.texture.getWidth();
+            v *= e.texture.getHeight();
+            if(u >= width || v >= height) return;
+            if(u < 0 || v < 0) return;
+            this.depthBuffer[px][py] = z;
+            try{
+               this.colorBuffer[px][py] = e.texture.getRGB((int)u, (int)v);
+            } catch(Exception err){
+               System.out.println("out of bounds: ("+(int)u+", "+(int)v+")");
+            }
+         } else {
+            this.depthBuffer[px][py] = z;
+            this.colorBuffer[px][py] = (flag) ? 0xFF00FF : e.defaultColor;
+         }
+      }
    }
    //outdated
     void renderObject(CameraManager c, Entity m){
@@ -199,20 +271,21 @@ public class WindowManager {
          }
       }
    }
+   //outdated 
     void drawLines(int yStart, int yEnd, int[] xLeftValues, int[] xRightValues, double z, Entity m, int currentIndice){
       int length = Math.abs(yEnd - yStart);
       if(xLeftValues.length != xRightValues.length) return;
       for(int i = 0; i < length; i++){
          for(int j = xLeftValues[i]; j < xRightValues[i]; j++){
             try {
-               // if(depthTest(j, i+yStart, z)){
+               if(depthTest(j, i+yStart, z)){
                   sampleTexture(m, 
                      m.finalIndices.get(currentIndice)[0], 
                      m.finalIndices.get(currentIndice)[1], 
                      m.finalIndices.get(currentIndice)[2],
                      j, i+yStart, currentIndice, ((j==xLeftValues[i] || j == xRightValues[i]-1)));
                      // this.colorBuffer[j][i+yStart] = ((j==xLeftValues[i] || j == xRightValues[i]-1)) ? 0xFFFF0000 : 0xFFFFFFFF;
-               // } 
+               } 
             } catch (Exception e) {
                e.printStackTrace();
             }
