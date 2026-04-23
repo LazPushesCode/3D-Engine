@@ -5,7 +5,7 @@ import java.util.concurrent.Executors;
 
 public class main{
     public static void main(String[] args){
-        WindowManager wm = new WindowManager(900, 600);
+        WindowManager wm = new WindowManager(1200, 600);
         CameraManager cm = new CameraManager(wm.width, wm.length,100);
         InputManager im = new InputManager();
 
@@ -41,7 +41,7 @@ public class main{
             try {
                 deltaTime = (currentTime - previousTime)%1000;
                 wm.clearScreen();
-                cm.pollInput(im, deltaTime);
+                cm.pollInput(im, wm, deltaTime);
                 cm.updateCameraMatrix();
                 for(Entity et : world.entities.values()){
                     renderEntity(world.cameras.get(0), wm, tm, et);
@@ -60,7 +60,6 @@ public class main{
                 }
                 latch.await();
                 wm.updateScreen(tm);
-                tm.emptyTiles();
                 Thread.sleep(8);
 
                 frames++;
@@ -72,6 +71,7 @@ public class main{
                 }
                 previousTime = currentTime;
                 currentTime = (System.currentTimeMillis());
+                tm.emptyTiles();
             } catch (Exception e) {
                 e.printStackTrace();
             }

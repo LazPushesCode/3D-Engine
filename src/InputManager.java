@@ -1,7 +1,7 @@
 import java.awt.event.*;
 
 public class InputManager implements KeyListener{
-    boolean forward, backward, left, right, up, down, ru, rd, rl, rr = false;
+    boolean forward, backward, left, right, up, down, ru, rd, rl, rr, showTiles = false;
 
 
     @Override
@@ -36,6 +36,9 @@ public class InputManager implements KeyListener{
                 break;
             case KeyEvent.VK_SPACE:
                 up = true;
+                break;
+            case KeyEvent.VK_G:
+                showTiles = (showTiles) ? false : true;
                 break;
         }
     }

@@ -6,6 +6,7 @@ public class WindowManager {
     int length;
     int [][] colorBuffer;
     double [][] depthBuffer;
+    boolean displayTilesOnScreen;
     WindowManager(int windowWidth, int windowHeight){
         frame.setSize(windowWidth, windowHeight);
         width = windowWidth;
@@ -15,6 +16,7 @@ public class WindowManager {
         panel.requestFocusInWindow();
         colorBuffer = new int[width][length];
         depthBuffer = new double[width][length];
+        displayTilesOnScreen = false;
         populateBuffers();
         frame.add(panel);
     }
@@ -117,39 +119,40 @@ public class WindowManager {
       }
    }
    void drawTileLines(int yStart, int yEnd, int[] xLeftValues, int[] xRightValues, double z, Tile t, int currentIndice, Scene s){
-      int length = Math.abs(yEnd - yStart);
+      int drawLength = Math.abs(yEnd - yStart);
       // if(xLeftValues.length != xRightValues.length) return;
-      for(int i = 0; i < length; i++){
-         if((i+yStart) <= t.yOffset && (i+yStart) > (t.yOffset - t.tileLength)){
+      for(int i = 0; i < drawLength; i++){
+         if((i+yStart) > t.yOffset || (i+yStart) < (t.yOffset - t.tileLength)) continue;
             for(int j = xLeftValues[i]; j < xRightValues[i]; j++){
-               try {
-                  if(depthTest(j, i+yStart, z)){
-                     sampleTextureOnTile(t, s.entities.get(t.modelTextureID.get(currentIndice)), 
-                        t.visibleTriangleList.get(currentIndice)[0], 
-                        t.visibleTriangleList.get(currentIndice)[1], 
-                        t.visibleTriangleList.get(currentIndice)[2],
-                        j, i+yStart, currentIndice, ((j==xLeftValues[i] || j == xRightValues[i]-1)));
-                        // this.colorBuffer[j][i+yStart] = ((j==xLeftValues[i] || j == xRightValues[i]-1)) ? 0xFFFF0000 : 0xFFFFFFFF;
-                  } 
-               } catch (Exception e) {
-                  e.printStackTrace();
-               }
-            }
+               if (j < (t.xOffset-t.tileWidth) || j > (t.xOffset)) continue;
+                  try {
+                     if(depthTest(j, i+yStart, z)){
+                        sampleTextureOnTile(t, s.entities.get(t.modelTextureID.get(currentIndice)), 
+                           t.visibleTriangleList.get(currentIndice)[0], 
+                           t.visibleTriangleList.get(currentIndice)[1], 
+                           t.visibleTriangleList.get(currentIndice)[2],
+                           j, i+yStart, currentIndice, ((j==xLeftValues[i] || j == xRightValues[i]-1)));
+                           this.colorBuffer[j][i+yStart] = ((j==xLeftValues[i] || j == xRightValues[i]-1)) ? 0xFFFF0000 : 0xFFFFFFFF;
+                           // t.localColorBuffer[(j - (int)(t.xOffset-t.tileWidth))][i+yStart-(int)(t.yOffset-t.tileLength)] = ((j == xLeftValues[i] || j == xRightValues[i])) ? 0xFFFF0000 : 0xFFFFFFFF;
+                     } 
+                  } catch (Exception e) {
+                     //  System.out.println("j: " + j + " and after calc: " + (j - (int)(t.xOffset-t.tileWidth)) + " i: " + i + " with xOffset: " + t.xOffset);
+                     // e.printStackTrace();
+                  }
          } 
       }
-      //shows tile border
-      // for(int i = (int)(t.yOffset-t.tileLength); i < t.yOffset; i++){
-      //    if(i == (int)(t.yOffset-t.tileLength) || i == (t.yOffset-1)){
-      //       for(int j = (int)(t.xOffset-t.tileWidth); j < t.xOffset; j++){
-      //          this.depthBuffer[j][i] = 0;
-      //          this.colorBuffer[j][i] = 0xFFFF0000;
-      //       }
-      //    }
-      //    this.depthBuffer[(int)(t.xOffset-t.tileWidth)][i] = 0;
-      //    this.colorBuffer[(int)(t.xOffset-t.tileWidth)][i] = 0xFFFF0000;
-      //    this.depthBuffer[(int)(t.xOffset-1)][i] = 0;
-      //    this.colorBuffer[(int)(t.xOffset-1)][i] = 0xFFFF0000;
-      // }
+      // shows tile border
+      if(!displayTilesOnScreen) return;
+      for(int i = 0; i < t.tileLength; i++){
+         if(i == 0 || i == (t.tileLength-1)){
+            for(int j = 0; j < t.tileWidth; j++){
+               t.localDepthBuffer[j][i] = 0;
+               t.localColorBuffer[j][i] = 0xFFFF0000;
+            }
+         }
+         t.localColorBuffer[0][i] = 0xFFFF0000;
+         t.localColorBuffer[(int)t.tileWidth-1][i] = 0xFFFF0000;
+      }
    }
     void sampleTextureOnTile(Tile t, Entity e, int t0, int t1, int t2, int px, int py, int currentTriangle, boolean flag){
       double x0 = t.vectorList.get(t0)[0];
@@ -218,11 +221,8 @@ public class WindowManager {
             if (xLocal < 0 || xLocal >= (int)t.tileWidth || yLocal < 0 || yLocal >= (int)t.tileLength) {
                return; 
             }
-
-            this.depthBuffer[px][py] = z;
             t.localDepthBuffer[xLocal][yLocal] = z;
             try{
-               this.colorBuffer[px][py] = e.texture.getRGB((int)u, (int)v);
                t.localColorBuffer[xLocal][yLocal] = e.texture.getRGB((int)u, (int)v);
                
             } catch(Exception err){
@@ -231,10 +231,6 @@ public class WindowManager {
          } else {
             int xLocal = px - (int)(t.xOffset - t.tileWidth);
             int yLocal = py - (int)(t.yOffset - t.tileLength);
-
-            this.depthBuffer[px][py] = z;
-            this.colorBuffer[px][py] = (flag) ? 0xFF00FF : e.defaultColor;
-
             t.localDepthBuffer[xLocal][yLocal] = z;
             t.localColorBuffer[xLocal][yLocal] = (flag) ? 0xFF00FF : e.defaultColor;
          }

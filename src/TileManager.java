@@ -38,18 +38,16 @@ public class TileManager {
                 v = e.finalIndices.get(i)[j];
                 x = e.finalVectors.get(v)[0];
                 y = e.finalVectors.get(v)[1];
-                if(x > wm.width) continue;
-                if(y > wm.length) continue;
                 if(x > xMax) xMax = x;
                 if(x < xMin) xMin = x;
                 if(y > yMax) yMax = y;
                 if(y < yMin) yMin = y;
             }
-            int minCol = (int) (xMin/this.tileWidth);
+            // int minCol = (int) (xMin/this.tileWidth);
+            int minCol = Math.max(0, (int)(xMin/this.tileWidth));
             int maxCol = Math.min(numCols - 1, (int)(xMax/this.tileWidth));
-            int minRow = (int) (yMin/this.tileLength);
+            int minRow = Math.max(0,(int)(yMin/this.tileLength));
             int maxRow = Math.min(numRows - 1, (int)(yMax/this.tileLength));
-
             for(int r = minRow; r <= maxRow; r++){
                 for(int c = minCol; c <= maxCol; c++){
                     int index = (numCols * r) + c;

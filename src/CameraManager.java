@@ -65,7 +65,8 @@ public class CameraManager {
         updateCameraMatrix();
         return this;
     }
-    void pollInput(InputManager im, double deltaTime){
+    void pollInput(InputManager im, WindowManager wm, double deltaTime){
+        wm.displayTilesOnScreen = im.showTiles;
         if(im.ru)this.pitch += .3 * deltaTime;
         if(im.rd)this.pitch -= .3 * deltaTime;
         if(im.rl)this.yaw -= .3 * deltaTime;
