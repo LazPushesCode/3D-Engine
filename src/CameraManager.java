@@ -13,6 +13,9 @@ public class CameraManager {
     Matrix viewMatrix;
     Matrix projectionMatrix;
 
+    Matrix oldViewMatrix;
+    Matrix oldProjectionMatrix;
+
     double speed;
 
     CameraManager(int windowWidth, int windowLength, int fov){
@@ -29,12 +32,19 @@ public class CameraManager {
         this.speed = 0.005;
         viewMatrix = Matrix.Identity();
         projectionMatrix = Matrix.Identity();
+
+        oldViewMatrix = Matrix.identity();
+        oldProjectionMatrix = Matrix.identity();
         updateCameraMatrix();
     }
     void updateViewMatrix(){
-        viewMatrix = Matrix.rotatex(pitch)
-        .multiply(Matrix.rotatey(-yaw))
-        .multiply(Matrix.translate(-x,-y,-z));
+        oldViewMatrix = Matrix.rotatex(pitch)
+        .multiply2dMatrix(Matrix.rotatey(-yaw))
+        .multiply2dMatrix(Matrix.translate(-x,-y,-z));
+
+        viewMatrix = Matrix.Rotatex(pitch)
+        .multiply(Matrix.Rotatey(-yaw))
+        .multiply(Matrix.Translate(-x,-y,-z));
     }
     void updateProjectionMatrix(){
         double t = 1/Math.tan(FOV/2);
@@ -44,20 +54,28 @@ public class CameraManager {
             {0, 0, -(far+near)/(near-far), -2*far*near/(near-far)},
             {0, 0, 1, 0}
         };
-        projectionMatrix.m = temp;
+        double [] temp2 = {
+            t/aspect, 0, 0, 0,
+            0, t, 0, 0,
+            0, 0, -(far+near)/(near-far), -2*far*near/(near-far),
+            0, 0, 1, 0
+        };
+        oldProjectionMatrix.m = temp;
+        projectionMatrix.data = temp2;
     }
     void convertToViewSpace(Entity m){
         for(int i = 0; i < m.worldSpaceVectors.length; i++){
-            double view[] = (viewMatrix.vectorTransformation(m.worldSpaceVectors[i]));
+            double view[] = (oldViewMatrix.vectorTransformation(m.worldSpaceVectors[i]));
             m.viewSpaceVectors.add(view);
         }
     }
     void convertToClipSpace(Entity m){
         for(int i = 0; i < m.viewSpaceVectors.size(); i++){
-            double clip[] = (projectionMatrix.vectorTransformation(m.viewSpaceVectors.get(i)));
+            double clip[] = (oldProjectionMatrix.vectorTransformation(m.viewSpaceVectors.get(i)));
             m.finalVectors.add(clip);            
         }
     }
+
     CameraManager setCameraPosition(double x, double y, double z){
         this.x = x;
         this.y = y;
@@ -143,7 +161,7 @@ public class CameraManager {
         updateProjectionMatrix();
     }
     void resetFrameData(){
-        viewMatrix = Matrix.Identity();
+        oldViewMatrix = Matrix.identity();
     }
     void printCameraInfo(){
         System.out.println("x: " + x + " y: " + y + " z: " + z);

@@ -1,20 +1,27 @@
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 public class Tile {
-    double xOffset, yOffset, tileWidth, tileLength;
+    //remove
     HashMap <Integer, double []> vectorList;
     ArrayList<int []> visibleTriangleList;
     ArrayList<double[][]> textureMapping;
     ArrayList<Integer> modelTextureID;
 
+    //keep
+    double xOffset, yOffset, tileWidth, tileLength;
+    int[] visibleIndices;
+    int indicesCount;
     int [][] localColorBuffer;
     double [][] localDepthBuffer;
 
-    Tile(double x, double y, double w, double l){
+    Tile(double x, double y, double w, double l, int count){
         xOffset = x;
         yOffset = y;
         tileWidth = w;
         tileLength = l;
+        indicesCount = 0;
+        visibleIndices = new int[count];
         visibleTriangleList = new ArrayList<>();
         vectorList = new HashMap<>();
         textureMapping = new ArrayList<>();
@@ -27,6 +34,9 @@ public class Tile {
         }
     }
     void emptyTileData(){
+
+        indicesCount = 0;
+
         vectorList.clear();
         visibleTriangleList.clear();
         textureMapping.clear();
@@ -44,5 +54,8 @@ public class Tile {
             }   
             System.out.println();
         }
+    }
+    void displayData(){
+        System.out.println(Arrays.toString(visibleIndices));
     }
 }

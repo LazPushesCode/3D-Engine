@@ -7,6 +7,7 @@ public class WindowManager {
     int [][] colorBuffer;
     double [][] depthBuffer;
     boolean displayTilesOnScreen;
+    boolean errorOccured;
     WindowManager(int windowWidth, int windowHeight){
         frame.setSize(windowWidth, windowHeight);
         width = windowWidth;
@@ -17,6 +18,7 @@ public class WindowManager {
         colorBuffer = new int[width][length];
         depthBuffer = new double[width][length];
         displayTilesOnScreen = false;
+        errorOccured = false;
         populateBuffers();
         frame.add(panel);
     }
@@ -70,7 +72,76 @@ public class WindowManager {
     void clearScreen(){
         panel.clear(0xFF000000); // opaque black
     }
-    void renderTile(CameraManager c, Tile t, Scene s){
+    void renderTile(Tile t, Scene s, CameraManager c){
+      //depth test on indice points
+      for (int i = 0; i < t.indicesCount; i++) {
+         int v = t.visibleIndices[i];
+         int x = (int) s.globalVertices[v];
+         int y = (int) s.globalVertices[v+1];
+         double z = s.globalVertices[v+2];
+         if(depthTest(x, y, z)){
+            this.depthBuffer[x][y] = z;
+         }
+      }
+      for(int i = 0; i < t.indicesCount; i+=3){
+         int pos1 = t.visibleIndices[i];
+         int pos2 = t.visibleIndices[i+1];
+         int pos3 = t.visibleIndices[i+2];
+
+         double x1 = s.globalVertices[pos1];
+         double y1 = s.globalVertices[pos1+1];
+         double z1 = s.globalVertices[pos1+2];
+
+         double x2 = s.globalVertices[pos2];
+         double y2 = s.globalVertices[pos2+1];
+         double z2 = s.globalVertices[pos2+2];
+
+         double x3 = s.globalVertices[pos3];
+         double y3 = s.globalVertices[pos3+1];
+         double z3 = s.globalVertices[pos3+2];
+         if (y1 > y2) { 
+               double tx=x1, ty=y1, tz=z1; x1=x2; y1=y2; z1=z2; x2=tx; y2=ty; z2=tz; 
+            }
+            if (y1 > y3) { 
+               double tx=x1, ty=y1, tz=z1; x1=x3; y1=y3; z1=z3; x3=tx; y3=ty; z3=tz; 
+            }
+            if (y2 > y3) { 
+               double tx=x2, ty=y2, tz=z2; x2=x3; y2=y3; z2=z3; x3=tx; y3=ty; z3=tz; 
+            }
+
+         int[] xValues1 = interpolate(
+            (int)x1,
+            (int)y1,
+            (int)x2,
+            (int)y2);
+         int[] xValues2 = interpolate(
+            (int)x2,
+            (int)y2,
+            (int)x3,
+            (int)y3);
+         int[] xValues3 = interpolate(
+            (int)x1,
+            (int)y1,
+            (int)x3,
+            (int)y3);
+            int[] combinedArray = new int[xValues1.length + xValues2.length];
+         try{
+            System.arraycopy(xValues1, 0, combinedArray, 0, xValues1.length);
+            System.arraycopy(xValues2, 0, combinedArray, xValues1.length, xValues2.length);
+         int left = decideWhichIsLeft(combinedArray, xValues3);
+            if(left == 0){
+               drawTileLines((int)y1, (int)y3, combinedArray, xValues3, z1, t, i, s);
+            } else {
+               drawTileLines((int)y1, (int)y3, xValues3, combinedArray, z1, t, i, s);
+            }
+            } catch (Exception e){
+               System.out.println("error: ");
+               e.printStackTrace();
+               errorOccured =  true; 
+         }
+      }
+    }
+    void oldRenderTile(CameraManager c, Tile t, Scene s){
       for (double[] vec : t.vectorList.values()) {
          if (vec[1] <= this.length && vec[1] >= -(this.length)) {
             int x = (int)vec[0];
@@ -109,8 +180,10 @@ public class WindowManager {
         int left = decideWhichIsLeft(combinedArray, xValues3);
          if(left == 0){
             drawTileLines((int)t.vectorList.get(pos1)[1], (int)t.vectorList.get(pos3)[1], combinedArray, xValues3, t.vectorList.get(pos1)[2], t, i, s);
+            // drawTileLines((int)s.globalVertices[pos1+1], (int)s.globalVertices[pos3+1], combinedArray, xValues3, s.globalVertices[pos1+2], t, i, s);
          } else {
             drawTileLines((int)t.vectorList.get(pos1)[1], (int)t.vectorList.get(pos3)[1], xValues3, combinedArray, t.vectorList.get(pos1)[2], t, i, s);
+            // drawTileLines((int)s.globalVertices[pos1+1], (int)s.globalVertices[pos3+1], xValues3, combinedArray, s.globalVertices[pos1+2], t, i, s);
          }
          } catch (Exception e){
             System.out.println("error: ");
@@ -127,13 +200,13 @@ public class WindowManager {
                if (j < (t.xOffset-t.tileWidth) || j > (t.xOffset)) continue;
                   try {
                      if(depthTest(j, i+yStart, z)){
-                        sampleTextureOnTile(t, s.entities.get(t.modelTextureID.get(currentIndice)), 
-                           t.visibleTriangleList.get(currentIndice)[0], 
-                           t.visibleTriangleList.get(currentIndice)[1], 
-                           t.visibleTriangleList.get(currentIndice)[2],
-                           j, i+yStart, currentIndice, ((j==xLeftValues[i] || j == xRightValues[i]-1)));
-                           this.colorBuffer[j][i+yStart] = ((j==xLeftValues[i] || j == xRightValues[i]-1)) ? 0xFFFF0000 : 0xFFFFFFFF;
-                           // t.localColorBuffer[(j - (int)(t.xOffset-t.tileWidth))][i+yStart-(int)(t.yOffset-t.tileLength)] = ((j == xLeftValues[i] || j == xRightValues[i])) ? 0xFFFF0000 : 0xFFFFFFFF;
+                        // sampleTextureOnTile(t, s.entities.get(t.modelTextureID.get(currentIndice)), 
+                        //    t.visibleTriangleList.get(currentIndice)[0], 
+                        //    t.visibleTriangleList.get(currentIndice)[1], 
+                        //    t.visibleTriangleList.get(currentIndice)[2],
+                        //    j, i+yStart, currentIndice, ((j==xLeftValues[i] || j == xRightValues[i]-1)));
+                        //    this.colorBuffer[j][i+yStart] = ((j==xLeftValues[i] || j == xRightValues[i]-1)) ? 0xFFFF0000 : 0xFFFFFFFF;
+                           t.localColorBuffer[(j - (int)(t.xOffset-t.tileWidth))][i+yStart-(int)(t.yOffset-t.tileLength)] = ((j == xLeftValues[i] || j == xRightValues[i])) ? 0xFFFF0000 : 0xFFFFFFFF;
                      } 
                   } catch (Exception e) {
                      //  System.out.println("j: " + j + " and after calc: " + (j - (int)(t.xOffset-t.tileWidth)) + " i: " + i + " with xOffset: " + t.xOffset);
@@ -253,75 +326,6 @@ public class WindowManager {
       }
    }
    //outdated
-    void renderObject(CameraManager c, Entity m){
-      for(int i = 0; i < m.finalVectors.size(); i++){
-         if(m.finalVectors.get(i)[1] <= this.length && m.finalVectors.get(i)[1] >= -(this.length)){
-            int x = (int)m.finalVectors.get(i)[0];
-            int y = (int)m.finalVectors.get(i)[1];
-            double z = m.finalVectors.get(i)[2];
-            if(depthTest(x, y, z)){
-               this.depthBuffer[x][y] = z;
-            }
-         }
-      }
-      for(int i = 0; i < m.finalIndices.size(); i++){
-         int pos1 = m.finalIndices.get(i)[0];
-         int pos2 = m.finalIndices.get(i)[1];
-         int pos3 = m.finalIndices.get(i)[2];
-         int[] xValues1 = interpolate(
-            (int)m.finalVectors.get(pos1)[0],
-            (int)m.finalVectors.get(pos1)[1],
-            (int)m.finalVectors.get(pos2)[0],
-            (int)m.finalVectors.get(pos2)[1]);
-         int[] xValues2 = interpolate(
-            (int)m.finalVectors.get(pos2)[0],
-            (int)m.finalVectors.get(pos2)[1],
-            (int)m.finalVectors.get(pos3)[0],
-            (int)m.finalVectors.get(pos3)[1]);
-         int[] xValues3 = interpolate(
-            (int)m.finalVectors.get(pos1)[0],
-            (int)m.finalVectors.get(pos1)[1],
-            (int)m.finalVectors.get(pos3)[0],
-            (int)m.finalVectors.get(pos3)[1]);
-         
-
-         int[] combinedArray = new int[xValues1.length + xValues2.length];
-         try{
-         System.arraycopy(xValues1, 0, combinedArray, 0, xValues1.length);
-         System.arraycopy(xValues2, 0, combinedArray, xValues1.length, xValues2.length);
-        int left = decideWhichIsLeft(combinedArray, xValues3);
-         if(left == 0){
-            drawLines((int)m.finalVectors.get(pos1)[1], (int)m.finalVectors.get(pos3)[1], combinedArray, xValues3, m.finalVectors.get(pos1)[2], m, i);
-         } else {
-            drawLines((int)m.finalVectors.get(pos1)[1], (int)m.finalVectors.get(pos3)[1], xValues3, combinedArray, m.finalVectors.get(pos1)[2], m, i);
-         }
-         } catch (Exception e){
-            System.out.println("error: ");
-            e.printStackTrace();
-         }
-      }
-   }
-   //outdated 
-    void drawLines(int yStart, int yEnd, int[] xLeftValues, int[] xRightValues, double z, Entity m, int currentIndice){
-      int length = Math.abs(yEnd - yStart);
-      if(xLeftValues.length != xRightValues.length) return;
-      for(int i = 0; i < length; i++){
-         for(int j = xLeftValues[i]; j < xRightValues[i]; j++){
-            try {
-               if(depthTest(j, i+yStart, z)){
-                  sampleTexture(m, 
-                     m.finalIndices.get(currentIndice)[0], 
-                     m.finalIndices.get(currentIndice)[1], 
-                     m.finalIndices.get(currentIndice)[2],
-                     j, i+yStart, currentIndice, ((j==xLeftValues[i] || j == xRightValues[i]-1)));
-                     // this.colorBuffer[j][i+yStart] = ((j==xLeftValues[i] || j == xRightValues[i]-1)) ? 0xFFFF0000 : 0xFFFFFFFF;
-               } 
-            } catch (Exception e) {
-               e.printStackTrace();
-            }
-         }
-      }
-   }
    void sampleTexture(Entity e, int t0, int t1, int t2, int px, int py, int currentTriangle, boolean flag){
       double x0 = e.finalVectors.get(t0)[0];
       double y0 = e.finalVectors.get(t0)[1];

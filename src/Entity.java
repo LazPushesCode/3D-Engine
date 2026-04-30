@@ -4,40 +4,44 @@ import java.util.ArrayList;
 import javax.imageio.ImageIO;
 
 public class Entity {
-    double[][] objectSpaceVectors;
-    int [][] indices;
-    
+    //keep
+    double[] vertices;
+    int[] indices;
     double [][][] textureMapping; 
-
-    double[][] worldSpaceVectors;
-    ArrayList<double[]> viewSpaceVectors;
-
-    ArrayList<double[]> finalVectors;
-    ArrayList<int[]> finalIndices;
-
-    ArrayList<double[][]> finalTextureMapping;
-
     BufferedImage texture;
-
+    Matrix oldTransformation;
     Matrix transformation;
-
     double x, y, z;
     double yaw, pitch, roll;
     double xSize, ySize, zSize;
-
+    int globalVerticeOffset;
+    int globalIndiceOffset;
     int defaultColor = 0xFFFFFF;
 
+    //remove
+    double[][] objectSpaceVectors;
+    int [][] objectSpaceindices;
+    double[][] worldSpaceVectors;
+    ArrayList<double[]> viewSpaceVectors;
+    ArrayList<double[]> finalVectors;
+    ArrayList<int[]> finalIndices;
+    ArrayList<double[][]> finalTextureMapping;
+
     int ID;
+
 
     Entity(){
 
     }
-    Entity(double [][] vertices, int [][] ind, Matrix m){
+    Entity(double [][] vertices, int [][] ind, Matrix m, Matrix d){
         initializeVectorSpaces(vertices);
+
         initializeVariables();
         initializeTextureMap();
-        this.indices = ind;
-        this.transformation = m;
+
+        this.objectSpaceindices = ind;
+        this.oldTransformation = m;
+        this.transformation = d;
         initializeLists();
     }
     void initializeVariables(){
@@ -52,19 +56,36 @@ public class Entity {
         zSize = 1;
     }
     void applyTransformationValues(){
-        transformation = Matrix.translate(x,y,z)
-        .multiply(Matrix.rotatex(yaw)
-        .multiply(Matrix.rotatey(pitch))
-        .multiply(Matrix.rotatez(roll))
-        .multiply(Matrix.scale(xSize,ySize,zSize)));
+        oldTransformation = Matrix.translate(x,y,z)
+        .multiply2dMatrix(Matrix.rotatex(yaw)
+        .multiply2dMatrix(Matrix.rotatey(pitch))
+        .multiply2dMatrix(Matrix.rotatez(roll))
+        .multiply2dMatrix(Matrix.scale(xSize,ySize,zSize)));
+        transformation = Matrix.Translate(x,y,z)
+        .multiply(Matrix.Rotatex(yaw)
+        .multiply(Matrix.Rotatey(pitch))
+        .multiply(Matrix.Rotatez(roll))
+        .multiply(Matrix.Scale(xSize,ySize,zSize)));
+    }
+    double[] convertVectorsToWorldSpace(){
+        double [] worldVectors = new double[vertices.length];
+        for(int v = 0; v < vertices.length; v+=4){
+            for(int i = 0; i < 4; i++){
+                worldVectors[v + i] = 0;
+                for(int j = 0; j < 4; j++){
+                    worldVectors[v + i] += transformation.data[(i*4) + j] * vertices[v + j];
+                }
+            }
+        }
+        return worldVectors;
     }
     void convertToWorldSpace(){
         for(int k = 0; k < objectSpaceVectors.length; k++){
-            for(int i = 0; i < transformation.m.length; i++){
+            for(int i = 0; i < oldTransformation.m.length; i++){
                 worldSpaceVectors[k][i] = 0;
-                for(int j = 0; j < transformation.m[i].length; j++){
-                    worldSpaceVectors[k][i] += transformation.m[i][j] * objectSpaceVectors[k][j];
-                }
+                for(int j = 0; j < oldTransformation.m[i].length; j++){
+                    worldSpaceVectors[k][i] += oldTransformation.m[i][j] * objectSpaceVectors[k][j];
+                } 
             }
         }
     }
@@ -73,6 +94,18 @@ public class Entity {
             texture = ImageIO.read(new File(source));
         } catch(Exception e){
             e.printStackTrace();
+        }
+    }
+    void initializeArrays(double [] givenVertices, int [] givenIndices){
+        vertices = new double[givenVertices.length+(givenVertices.length/3)];
+        indices = givenIndices;
+        int currentIndex = 0;
+        for(int i = 0; i < givenVertices.length; i+=3){
+            vertices[currentIndex] = givenVertices[i];
+            vertices[currentIndex+1] = givenVertices[i+1];
+            vertices[currentIndex+2] = givenVertices[i+2];
+            vertices[currentIndex+3] = 1;
+            currentIndex += 4;
         }
     }
     void initializeVectorSpaces(double [][] vertices){
@@ -90,7 +123,7 @@ public class Entity {
         }
     }
     void initializeTextureMap(){
-        textureMapping = new double[indices.length][3][2];
+        textureMapping = new double[objectSpaceindices.length][3][2];
     }
     void initializeLists(){
         viewSpaceVectors = new ArrayList<>();
@@ -99,6 +132,37 @@ public class Entity {
         finalTextureMapping = new ArrayList<>();
     }
     void cubeMesh(){
+        double [] cubeVertices = {
+            0.5,0.5,0.5, //0
+            -0.5,0.5,0.5, //1
+            0.5,0.5,-0.5, //2
+            -0.5,0.5,-0.5, //3
+            0.5,-0.5,0.5, //4
+            0.5, -0.5, -0.5, //5
+            -0.5,-0.5,0.5, //6
+            -0.5,-0.5,-0.5 //7
+        };
+        int [] cubeIndices = {
+            // top
+            1,0,2,
+            1,2,3,
+            //front
+            3,2,5,
+            3,5,7,
+            //right
+            2,0,4,
+            2,4,5,
+            // left
+            6, 1, 7,
+            7,1,3,
+            //back
+            4,0,1,
+            4,1,6,
+            //bottom
+            4,6,5, 
+            7,5,6 
+        };
+
         double [][] vertices = {
             {0.5,0.5,0.5}, //0
             {-0.5,0.5,0.5}, //1
@@ -109,7 +173,7 @@ public class Entity {
             {-0.5,-0.5,0.5}, //6
             {-0.5,-0.5,-0.5} //7
         };
-        int [][] cubeIndices = {
+        int [][] indices = {
             // top
             {1,0,2},
             {1,2,3},
@@ -129,9 +193,11 @@ public class Entity {
             {4,6,5}, 
             {7,5,6} 
         };
+        initializeArrays(cubeVertices, cubeIndices);
+
         initializeVectorSpaces(vertices);
         initializeVariables();
-        this.indices = cubeIndices;
+        this.objectSpaceindices = indices;
         initializeTextureMap();
         applyTexture(0, new double[][]{{0, 0},{1, 0},{1, 1}}); //top
         applyTexture(1, new double[][]{{0, 0},{1, 1},{0, 1}});
@@ -151,6 +217,7 @@ public class Entity {
         applyTexture(10, new double[][]{{1,0}, {0,0}, {0,1}}); //back
         applyTexture(11, new double[][]{{0,1}, {1,1}, {0,0}});
         initializeLists();
+        oldTransformation = Matrix.identity();
         transformation = Matrix.Identity();
     }
     void applyTexture(int triangle, double[][] textureCords){
@@ -167,6 +234,7 @@ public class Entity {
         return this;
     }
     Entity resetTransformation(){
+        oldTransformation = Matrix.identity();
         transformation = Matrix.Identity();
         return this;
     }
@@ -174,29 +242,24 @@ public class Entity {
         this.x += givenx;
         this.y += giveny;
         this.z += givenz;
-        // transformation = transformation.multiply(Matrix.translate(x, y, z));
         return this;
     }
     Entity scale(double givenx, double giveny, double givenz){
         this.xSize += givenx;
         this.ySize += giveny;
         this.zSize += givenz;
-        // transformation = transformation.multiply(Matrix.scale(xSize, ySize, zSize));
         return this;
     }
     Entity rotatex(double degree){
         pitch += degree;
-        // transformation = transformation.multiply(Matrix.rotatex(pitch));
         return this;
     }
     Entity rotatey(double degree){
         yaw += degree;
-        // transformation = transformation.multiply(Matrix.rotatey(yaw));
         return this;
     }
     Entity rotatez(double degree){
         roll += degree;
-        // transformation = transformation.multiply(Matrix.rotatez(roll));
         return this;
     }
     void sortVertices(){

@@ -1,22 +1,103 @@
 import java.util.ArrayList;
 
 public class TriangleManager {
+    static void cullOperations(Scene s){
+        int validIndices[] = new int[s.currentIndicesSize];
+        int currentIndex = 0;
+        for(int i = 0; i < s.currentIndicesSize; i+=3){
+            int p0 = s.globalIndices[i];
+            int p1 = s.globalIndices[i+1];
+            int p2 = s.globalIndices[i+2];
+            if(determineDirection(s.globalVertices, p0, p1, p2) <= 0){
+                continue;
+            }
+            validIndices[currentIndex] = p0;
+            validIndices[currentIndex+1] = p1;
+            validIndices[currentIndex+2] = p2;
+            currentIndex+=3;
+        }
+        s.convertVerticesToClipSpace();
+        processValidIndices(s, validIndices, currentIndex);
+    }
+    static void processValidIndices(Scene s, int[] validIndices, int validIndicesSize){
+        for(int i = 0; i < validIndicesSize; i+=3){
+            boolean discard = false;
+            boolean clip = false;
+            for(int p = 0; p < 6; p++){
+                int pointsOutsidePlane = 0;
+                for(int j = i; j < (i+3); j++){
+                    int index = validIndices[j]*4;
+                    double xm = s.globalVertices[index];
+                    double ym = s.globalVertices[index+1];
+                    double zm = s.globalVertices[index+2];
+                    double wm = s.globalVertices[index+3];
+                    switch(p){
+                        case 0: // outside left plane
+                            if(xm < -wm) {
+                                pointsOutsidePlane++;
+                            }
+                            break;
+                        case 1: // outside right plane
+                            if(xm > wm) {
+                                pointsOutsidePlane++;
+                            }
+                            break;
+                        case 2: // outside bottom plane
+                            if(ym < -wm) {
+                                pointsOutsidePlane++;
+                            }
+                            break;
+                        case 3: // outside top plane
+                            if(ym > wm) {
+                                pointsOutsidePlane++;
+                            }
+                            break;
+                        case 4: // outside near plane
+                            if(zm < 0) {
+                                pointsOutsidePlane++;
+                            }
+                            break;
+                        case 5: // outside far plane
+                            if(zm < wm) {
+                                pointsOutsidePlane++;
+                            }
+                            break;
+                    }
+                }
+                if(pointsOutsidePlane == 3){
+                    discard = true;
+                    break;
+                }
+                if(pointsOutsidePlane > 0){
+                    clip = true;
+                }
+            }
+            if(discard){
+                continue;
+            }
+            if(clip){
+                clipTriangle(s, validIndices[i], validIndices[i+1], validIndices[i+2]);
+                continue;
+            }
+            s.addProcessedTriangle(validIndices[i], validIndices[i+1], validIndices[i+2]);
+        }
+        s.perspectiveDivideVectors();
+    }
     static void cullTriangles(Entity m, CameraManager c){
         ArrayList<int[]> validIndices = new ArrayList<>();
         ArrayList<double[][]> validTextures = new ArrayList<>();
         //backface culling
-        for(int i = 0; i < m.indices.length; i++){
-            if(determineDirection(m.indices[i], m.viewSpaceVectors) <= 0) {
+        for(int i = 0; i < m.objectSpaceindices.length; i++){
+            if(oldDetermineDirection(m.objectSpaceindices[i], m.viewSpaceVectors) <= 0) {
                 continue;
             }
-            validIndices.add(m.indices[i].clone());
+            validIndices.add(m.objectSpaceindices[i].clone());
             validTextures.add(m.textureMapping[i].clone());
         }
         c.convertToClipSpace(m);
         finalizeTriangles(m, validIndices, validTextures);
     }
     static void finalizeTriangles(Entity m, ArrayList<int[]> validIndices, ArrayList<double[][]> validTextures){
-        
         ArrayList<int[]> clipTriList = new ArrayList<>();
         ArrayList<int[]> finalTriList = new ArrayList<>();
         ArrayList<double[][]> clipTextureList = new ArrayList<>();
@@ -115,7 +196,30 @@ public class TriangleManager {
             }
         }
     }
-    static double determineDirection(int[] tri, ArrayList<double[]> vtx) {
+    static double determineDirection(double[] vectors, int p0, int p1, int p2){
+        p0 *= 4;
+        p1 *= 4;
+        p2 *= 4;
+        
+        double e1x = vectors[p1]-vectors[p0];
+        double e1y = vectors[p1+1] - vectors[p0+1];
+        double e1z = vectors[p1+2] - vectors[p0+2];
+
+        double e2x = vectors[p2] - vectors[p0];
+        double e2y = vectors[p2+1] - vectors[p0+1];
+        double e2z = vectors[p2+2] - vectors[p0+2];
+
+        double nx = e1y * e2z - e1z * e2y;
+        double ny = e1z * e2x - e1x * e2z;
+        double nz = e1x * e2y - e1y * e2x; 
+
+        double vx = -vectors[p0];
+        double vy = -vectors[p0 + 1];
+        double vz = -vectors[p0 + 2];
+
+        return (nx * vx) + (ny * vy) + (nz * vz);
+    }
+    static double oldDetermineDirection(int[] tri, ArrayList<double[]> vtx) {
         double[] p0 = vtx.get(tri[0]);
         double[] p1 = vtx.get(tri[1]);
         double[] p2 = vtx.get(tri[2]);
@@ -144,6 +248,48 @@ public class TriangleManager {
         };
         return n[0]*v[0] + n[1]*v[1] + n[2]*v[2];
     }
+    static void clipTriangle(Scene s, int v0, int v1, int v2){
+        
+        int[] input = new int[12];
+        int[] output = new int[12];
+
+        input[0] = v0;
+        input[1] = v1;
+        input[2] = v2;
+        int inputSize = 3;
+
+        for (int p = 0; p < 5; p++) {
+            int outputSize = 0;
+            if(inputSize == 0) return;
+            for(int i = 0; i < inputSize; i++){
+                int t1 = input[i];
+                int t2 = input[(i+1) % inputSize];
+
+                boolean e1 = isInPlane(p, s.globalVertices, t1);
+                boolean e2 = isInPlane(p, s.globalVertices, t2);
+
+                if(e1 && e2){
+                    output[outputSize++] = t2;
+                } else if(e1){
+                    output[outputSize++] = intersectAndStore(s, t1, t2, p);
+                } else if(e2){
+                    output[outputSize++] = intersectAndStore(s, t1, t2, p);
+                    output[outputSize++] = t2;
+                }
+            }
+        int[] temp = input;
+        input = output;
+        output = temp;
+        inputSize = outputSize;
+        }
+        distributeIndices(s, input, inputSize);
+    }
+    static void distributeIndices(Scene s, int[] input, int inputSize){
+        if(inputSize < 3) return;
+        for(int i = 1; i < inputSize-1; i++){
+            s.addProcessedTriangle(input[0], input[i], input[i+1]);
+        }
+    }
     static TrianglePackage clipTriangle(ArrayList<Integer> t, Entity m, double[][] textureCords){
         TrianglePackage tp = new TrianglePackage();
         tp.vertices = t;
@@ -158,8 +304,8 @@ public class TriangleManager {
                     int t2 = tp.vertices.get((i+1) % tp.vertices.size());
                     double[] uv1 = tp.uvs.get(i);
                     double[] uv2 = tp.uvs.get((i+1) % tp.uvs.size());
-                    boolean e1 = isInPlane(p, m.finalVectors.get(t1));
-                    boolean e2 = isInPlane(p, m.finalVectors.get(t2));
+                    boolean e1 = oldIsInPlane(p, m.finalVectors.get(t1));
+                    boolean e2 = oldIsInPlane(p, m.finalVectors.get(t2));
                     
                     //when cliping a triangle, we need to ensure the uv mappings remain consistent
                     if(e1 && e2){
@@ -180,7 +326,6 @@ public class TriangleManager {
                     } 
                 }
                 if(pointOutput.isEmpty()){
-                    System.out.println("output is empty");
                     return null;
                 }
                 tp.vertices = pointOutput;
@@ -188,7 +333,29 @@ public class TriangleManager {
             }
         return tp;
     }
-    static boolean isInPlane(int plane, double[] v){
+    static boolean isInPlane(int plane, double[] vertices, int indice){
+        indice *= 4;
+        double x = vertices[indice];
+        double y = vertices[indice+1];
+        double z = vertices[indice+2];
+        double w = vertices[indice+3];
+
+         switch (plane) {
+            case 0:
+                return ((x + w) >= 0);
+            case 1:
+                return ((w - x) >= 0);
+            case 2:
+                return ((y + w) >= 0);
+            case 3:
+                return ((w - y) >= 0);
+            case 4:
+                return (z >= 0);
+            default:
+                throw new AssertionError();
+        }
+    }
+    static boolean oldIsInPlane(int plane, double[] v){
         switch (plane) {
             case 0:
                 return ((v[0] + v[3]) >= 0);
@@ -203,6 +370,46 @@ public class TriangleManager {
             default:
                 throw new AssertionError();
         }
+    }
+    static int intersectAndStore(Scene s, int p1, int p2, int plane){
+        p1 *= 4;
+        p2 *= 4;
+        double fp1, fp2;
+        switch (plane) {
+            case 0:
+                fp1 = s.globalVertices[p1+3] + s.globalVertices[p1]; 
+                fp2 = s.globalVertices[p2+3] + s.globalVertices[p2];
+                break;
+            case 1:
+                fp1 = s.globalVertices[p1 + 3] - s.globalVertices[p1];
+                fp2 = s.globalVertices[p2 + 3] - s.globalVertices[p2];
+                break;
+            case 2:
+                fp1 = s.globalVertices[p1 + 3] + s.globalVertices[p1 + 1];
+                fp2 = s.globalVertices[p2 + 3] + s.globalVertices[p2 + 1];
+                break;
+            case 3:
+                fp1 = s.globalVertices[p1 + 3] - s.globalVertices[p1 + 1]; 
+                fp2 = s.globalVertices[p2 + 3] - s.globalVertices[p2 + 1];
+                break;
+            case 4:
+                fp1 = s.globalVertices[p1 + 3] + s.globalVertices[p1 + 2]; 
+                fp2 = s.globalVertices[p2 + 3] + s.globalVertices[p2 + 2];
+                break;
+            case 5:
+                fp1 = s.globalVertices[p1 + 3] - s.globalVertices[p1 + 2]; 
+                fp2 = s.globalVertices[p2 + 3] - s.globalVertices[p2 + 2];
+                break;
+            default:
+                throw new AssertionError();
+        }
+        double t = fp1 / (fp1 - fp2);
+        int newIndice = s.currentVerticesSize;
+        for(int i = 0; i < 4; i++){
+            s.globalVertices[newIndice + i] = s.globalVertices[p1+i] + t*(s.globalVertices[p2+i] - s.globalVertices[p1+i]);
+        }
+        s.currentVerticesSize += 4;
+        return (newIndice/4);
     }
     static double[] calculateIntersection(double[] p1, double[] p2, double[] uv1, double[] uv2, int plane){
         double fp1;
