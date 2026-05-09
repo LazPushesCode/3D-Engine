@@ -56,10 +56,15 @@ public class WindowManager {
          e.printStackTrace();
         }
     }
-    boolean inScreenBounds(int x, int y){
+   boolean inScreenBounds(int x, int y){
         if(y < 0 || y >= length) return false;
         if(x < 0 || x >= width) return false;
         return true;
+    }
+    boolean inTileBounds(Tile t, int x, int y){
+      if(x < 0 || x >= t.tileWidth)return false;
+      if(y < 0 || y >= t.tileLength)return false;
+      return true;
     }
     void populateBuffers(){
         for(int i = 0; i < width; i++){
@@ -81,6 +86,10 @@ public class WindowManager {
          double z = s.globalVertices[v+2];
          if(depthTest(x, y, z)){
             this.depthBuffer[x][y] = z;
+         }
+         if(localDepthTest(t, x, y, z)){
+            t.localDepthBuffer[(int)(x + (t.tileWidth - t.xOffset))]
+            [(int)(y + (t.tileLength - t.yOffset))] = z;
          }
       }
       for(int i = 0; i < t.indicesCount; i+=3){
@@ -147,9 +156,9 @@ public class WindowManager {
             int x = (int)vec[0];
             int y = (int)vec[1];
             double z = vec[2];
-            if(depthTest(x, y, z)){
-               this.depthBuffer[x][y] = z;
-            }
+            // if(depthTest(x, y, z)){
+            //    this.depthBuffer[x][y] = z;
+            // }
          }
       }
       for(int i = 0; i < t.visibleTriangleList.size(); i++){
@@ -172,7 +181,6 @@ public class WindowManager {
             (int)t.vectorList.get(pos3)[0],
             (int)t.vectorList.get(pos3)[1]);
          
-
          int[] combinedArray = new int[xValues1.length + xValues2.length];
          try{
          System.arraycopy(xValues1, 0, combinedArray, 0, xValues1.length);
@@ -199,14 +207,14 @@ public class WindowManager {
             for(int j = xLeftValues[i]; j < xRightValues[i]; j++){
                if (j < (t.xOffset-t.tileWidth) || j > (t.xOffset)) continue;
                   try {
-                     if(depthTest(j, i+yStart, z)){
+                     if(localDepthTest(t, j, i+yStart, z)){
                         // sampleTextureOnTile(t, s.entities.get(t.modelTextureID.get(currentIndice)), 
                         //    t.visibleTriangleList.get(currentIndice)[0], 
                         //    t.visibleTriangleList.get(currentIndice)[1], 
                         //    t.visibleTriangleList.get(currentIndice)[2],
                         //    j, i+yStart, currentIndice, ((j==xLeftValues[i] || j == xRightValues[i]-1)));
                         //    this.colorBuffer[j][i+yStart] = ((j==xLeftValues[i] || j == xRightValues[i]-1)) ? 0xFFFF0000 : 0xFFFFFFFF;
-                           t.localColorBuffer[(j - (int)(t.xOffset-t.tileWidth))][i+yStart-(int)(t.yOffset-t.tileLength)] = ((j == xLeftValues[i] || j == xRightValues[i])) ? 0xFFFF0000 : 0xFFFFFFFF;
+                           t.localColorBuffer[(j + (int)(t.tileWidth - t.xOffset))][i+yStart+(int)(t.tileLength - t.yOffset)] = ((j == xLeftValues[i] || j == xRightValues[i])) ? 0xFFFF0000 : 0xFFFFFFFF;
                      } 
                   } catch (Exception e) {
                      //  System.out.println("j: " + j + " and after calc: " + (j - (int)(t.xOffset-t.tileWidth)) + " i: " + i + " with xOffset: " + t.xOffset);
@@ -279,7 +287,7 @@ public class WindowManager {
       v /= wInterpolated;
       z /= wInterpolated;
       
-      if(depthTest(px, py, z)){
+      if(localDepthTest(t,px, py, z)){
          if(e.texture != null){
             int width = e.texture.getWidth();
             int height = e.texture.getHeight();
@@ -288,8 +296,8 @@ public class WindowManager {
             if(u >= width || v >= height) return;
             if(u < 0 || v < 0) return;
             
-            int xLocal = px - (int)(t.xOffset - t.tileWidth)-1;
-            int yLocal = py - (int)(t.yOffset - t.tileLength)-1;
+            int xLocal = px + (int)(t.tileWidth - t.xOffset);
+            int yLocal = py + (int)(t.tileLength - t.yOffset);
 
             if (xLocal < 0 || xLocal >= (int)t.tileWidth || yLocal < 0 || yLocal >= (int)t.tileLength) {
                return; 
@@ -326,77 +334,83 @@ public class WindowManager {
       }
    }
    //outdated
-   void sampleTexture(Entity e, int t0, int t1, int t2, int px, int py, int currentTriangle, boolean flag){
-      double x0 = e.finalVectors.get(t0)[0];
-      double y0 = e.finalVectors.get(t0)[1];
-      double z0 = e.finalVectors.get(t0)[2];
-      double w0 = e.finalVectors.get(t0)[3];
+   // void sampleTexture(Entity e, int t0, int t1, int t2, int px, int py, int currentTriangle, boolean flag){
+   //    double x0 = e.finalVectors.get(t0)[0];
+   //    double y0 = e.finalVectors.get(t0)[1];
+   //    double z0 = e.finalVectors.get(t0)[2];
+   //    double w0 = e.finalVectors.get(t0)[3];
 
-      double u0 = e.finalTextureMapping.get(currentTriangle)[0][0];
-      double v0 = e.finalTextureMapping.get(currentTriangle)[0][1];
+   //    double u0 = e.finalTextureMapping.get(currentTriangle)[0][0];
+   //    double v0 = e.finalTextureMapping.get(currentTriangle)[0][1];
 
-      double x1 = e.finalVectors.get(t1)[0];
-      double y1 = e.finalVectors.get(t1)[1];
-      double z1 = e.finalVectors.get(t1)[2];
-      double w1 = e.finalVectors.get(t1)[3];
+   //    double x1 = e.finalVectors.get(t1)[0];
+   //    double y1 = e.finalVectors.get(t1)[1];
+   //    double z1 = e.finalVectors.get(t1)[2];
+   //    double w1 = e.finalVectors.get(t1)[3];
 
-      double u1 = e.finalTextureMapping.get(currentTriangle)[1][0];
-      double v1 = e.finalTextureMapping.get(currentTriangle)[1][1];
+   //    double u1 = e.finalTextureMapping.get(currentTriangle)[1][0];
+   //    double v1 = e.finalTextureMapping.get(currentTriangle)[1][1];
 
-      double x2 = e.finalVectors.get(t2)[0];
-      double y2 = e.finalVectors.get(t2)[1];
-      double z2 = e.finalVectors.get(t2)[2];
-      double w2 = e.finalVectors.get(t2)[3];
+   //    double x2 = e.finalVectors.get(t2)[0];
+   //    double y2 = e.finalVectors.get(t2)[1];
+   //    double z2 = e.finalVectors.get(t2)[2];
+   //    double w2 = e.finalVectors.get(t2)[3];
 
-      double u2 = e.finalTextureMapping.get(currentTriangle)[2][0];
-      double v2 = e.finalTextureMapping.get(currentTriangle)[2][1];
+   //    double u2 = e.finalTextureMapping.get(currentTriangle)[2][0];
+   //    double v2 = e.finalTextureMapping.get(currentTriangle)[2][1];
 
-      double denominator = (y1 - y2) * (x0 - x2) + (x2 - x1) * (y0-y2);
+   //    double denominator = (y1 - y2) * (x0 - x2) + (x2 - x1) * (y0-y2);
 
-      double b0 = ((y1-y2)*(px-x2)+(x2-x1)*(py-y2))/denominator;
-      double b1 = ((y2-y0)*(px-x2)+(x0-x2)*(py-y2))/denominator;
-      double b2 = 1 - b1 - b0;
+   //    double b0 = ((y1-y2)*(px-x2)+(x2-x1)*(py-y2))/denominator;
+   //    double b1 = ((y2-y0)*(px-x2)+(x0-x2)*(py-y2))/denominator;
+   //    double b2 = 1 - b1 - b0;
 
-      u0 *= (1/w0);
-      u1 *= (1/w1);
-      u2 *= (1/w2);
+   //    u0 *= (1/w0);
+   //    u1 *= (1/w1);
+   //    u2 *= (1/w2);
 
-      v0 *= (1/w0);
-      v1 *= (1/w1);
-      v2 *= (1/w2);
+   //    v0 *= (1/w0);
+   //    v1 *= (1/w1);
+   //    v2 *= (1/w2);
 
-      z0 *= (1/w0);
-      z1 *= (1/w1);
-      z2 *= (1/w2);
+   //    z0 *= (1/w0);
+   //    z1 *= (1/w1);
+   //    z2 *= (1/w2);
 
-      double u = b0*u0 + b1*u1 + b2*u2;
-      double v = b0*v0 + b1*v1 + b2*v2;
-      double z = b0 *z0 + b1*z1 + b2*z2;
-      double wInterpolated = b0*(1/w0) + b1*(1/w1) + b2*(1/w2);
+   //    double u = b0*u0 + b1*u1 + b2*u2;
+   //    double v = b0*v0 + b1*v1 + b2*v2;
+   //    double z = b0 *z0 + b1*z1 + b2*z2;
+   //    double wInterpolated = b0*(1/w0) + b1*(1/w1) + b2*(1/w2);
 
-      u /= wInterpolated;
-      v /= wInterpolated;
-      z /= wInterpolated;
+   //    u /= wInterpolated;
+   //    v /= wInterpolated;
+   //    z /= wInterpolated;
 
-      if(depthTest(px, py, z)){
-         if(e.texture != null){
-            int width = e.texture.getWidth();
-            int height = e.texture.getHeight();
-            u *= e.texture.getWidth();
-            v *= e.texture.getHeight();
-            if(u >= width || v >= height) return;
-            if(u < 0 || v < 0) return;
-            this.depthBuffer[px][py] = z;
-            try{
-               this.colorBuffer[px][py] = e.texture.getRGB((int)u, (int)v);
-            } catch(Exception t){
-               System.out.println("out of bounds: ("+(int)u+", "+(int)v+")");
-            }
-         } else {
-            this.depthBuffer[px][py] = z;
-            this.colorBuffer[px][py] = (flag) ? 0xFF00FF : e.defaultColor;
-         }
-      }
+   //    if(depthTest(px, py, z)){
+   //       if(e.texture != null){
+   //          int width = e.texture.getWidth();
+   //          int height = e.texture.getHeight();
+   //          u *= e.texture.getWidth();
+   //          v *= e.texture.getHeight();
+   //          if(u >= width || v >= height) return;
+   //          if(u < 0 || v < 0) return;
+   //          this.depthBuffer[px][py] = z;
+   //          try{
+   //             this.colorBuffer[px][py] = e.texture.getRGB((int)u, (int)v);
+   //          } catch(Exception t){
+   //             System.out.println("out of bounds: ("+(int)u+", "+(int)v+")");
+   //          }
+   //       } else {
+   //          this.depthBuffer[px][py] = z;
+   //          this.colorBuffer[px][py] = (flag) ? 0xFF00FF : e.defaultColor;
+   //       }
+   //    }
+   // }
+   boolean localDepthTest(Tile t, int x, int y, double z){
+      int xLocal = x + (int)(t.tileWidth - t.xOffset);
+      int yLocal = y + (int)(t.tileLength - t.yOffset);
+      if(!inTileBounds(t, xLocal, yLocal))return false;
+      return (z >= t.localDepthBuffer[xLocal][yLocal]);
    }
     boolean depthTest(int x, int y, double z){
       if(!inScreenBounds(x, y)) return false;

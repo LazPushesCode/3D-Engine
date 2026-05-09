@@ -26,7 +26,7 @@ public class TriangleManager {
             for(int p = 0; p < 6; p++){
                 int pointsOutsidePlane = 0;
                 for(int j = i; j < (i+3); j++){
-                    int index = validIndices[j]*4;
+                    int index = validIndices[j]*Scene.STRIDE;
                     double xm = s.globalVertices[index];
                     double ym = s.globalVertices[index+1];
                     double zm = s.globalVertices[index+2];
@@ -197,9 +197,10 @@ public class TriangleManager {
         }
     }
     static double determineDirection(double[] vectors, int p0, int p1, int p2){
-        p0 *= 4;
-        p1 *= 4;
-        p2 *= 4;
+        int stride = Scene.STRIDE;
+        p0 *= stride;
+        p1 *= stride;
+        p2 *= stride;
         
         double e1x = vectors[p1]-vectors[p0];
         double e1y = vectors[p1+1] - vectors[p0+1];
@@ -333,8 +334,9 @@ public class TriangleManager {
             }
         return tp;
     }
+    
     static boolean isInPlane(int plane, double[] vertices, int indice){
-        indice *= 4;
+        indice *= Scene.STRIDE;
         double x = vertices[indice];
         double y = vertices[indice+1];
         double z = vertices[indice+2];
@@ -372,8 +374,9 @@ public class TriangleManager {
         }
     }
     static int intersectAndStore(Scene s, int p1, int p2, int plane){
-        p1 *= 4;
-        p2 *= 4;
+        int scene = Scene.STRIDE;
+        p1 *= scene;
+        p2 *= scene;
         double fp1, fp2;
         switch (plane) {
             case 0:
@@ -409,7 +412,7 @@ public class TriangleManager {
             s.globalVertices[newIndice + i] = s.globalVertices[p1+i] + t*(s.globalVertices[p2+i] - s.globalVertices[p1+i]);
         }
         s.currentVerticesSize += 4;
-        return (newIndice/4);
+        return (newIndice/scene);
     }
     static double[] calculateIntersection(double[] p1, double[] p2, double[] uv1, double[] uv2, int plane){
         double fp1;

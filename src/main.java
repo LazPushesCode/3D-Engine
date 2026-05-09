@@ -19,8 +19,8 @@ public class main{
         Scene world = new Scene();
         world.addCamera(cm);
 
-        for(int i = -4; i < 4; i++){
-            for(int j = -4; j < 4; j++){
+        for(int i = -5; i < 5; i++){
+            for(int j = -5; j < 5; j++){
                 Entity cube = new Entity();
                 cube.cubeMesh();
                 cube.setWorldPosition(i, 0, j);
@@ -33,13 +33,13 @@ public class main{
         // cube.cubeMesh();
         // cube.setWorldPosition(-2, 2, 2);
         // world.addEntity(cube);
-        // cube.setTexture("C:\\Users\\lazar\\3D-Engine\\resources\\assets\\11635.png");
 
-        // world.entities.get(0).applyTransformationValues();
-        // world.convertVerticesToWorldSpace();
-        // world.convertVerticesToViewSpace();
-        // TriangleManager.cullOperations(world);
-        // world.convertToNDC(wm, tm);
+        // Entity cube2 = new Entity();
+        // cube2.cubeMesh();
+        // cube2.setWorldPosition(-1, 2, 2);
+        // world.addEntity(cube2);
+        // cube2.setTexture("C:\\Users\\lazar\\3D-Engine\\resources\\assets\\11635.png");
+
         long currentTime = (System.currentTimeMillis());
         long previousTime = 0;
 
@@ -102,45 +102,45 @@ public class main{
             }
         }
         if(!newSystem){
-            while(true){
-                try {
-                    deltaTime = (currentTime - previousTime)%1000;
-                    wm.clearScreen();
-                    cm.pollInput(im, wm, deltaTime);
-                    cm.updateCameraMatrix();
-                    for(Entity et : world.entities.values()){
-                        renderEntity(world.cameras.get(0), wm, tm, et);
-                    }
-                    CountDownLatch latch = new CountDownLatch(tm.tiles.size());
-                    for(int i = 0; i < tm.tiles.size(); i++){
-                        final int index = i;
-                        tilePool.execute(() -> {
-                            try {
-                                wm.oldRenderTile(cm, tm.tiles.get(index), world);
-                            } finally {
-                                latch.countDown();
-                            }
-                        });
-                    }
-                    latch.await();
-                    wm.updateScreen(tm);
-                    Thread.sleep(8);
+        //     while(true){
+        //         try {
+        //             deltaTime = (currentTime - previousTime)%1000;
+        //             wm.clearScreen();
+        //             cm.pollInput(im, wm, deltaTime);
+        //             cm.updateCameraMatrix();
+        //             for(Entity et : world.entities.values()){
+        //                 renderEntity(world.cameras.get(0), wm, tm, et);
+        //             }
+        //             CountDownLatch latch = new CountDownLatch(tm.tiles.size());
+        //             for(int i = 0; i < tm.tiles.size(); i++){
+        //                 final int index = i;
+        //                 tilePool.execute(() -> {
+        //                     try {
+        //                         wm.oldRenderTile(cm, tm.tiles.get(index), world);
+        //                     } finally {
+        //                         latch.countDown();
+        //                     }
+        //                 });
+        //             }
+        //             latch.await();
+        //             wm.updateScreen(tm);
+        //             Thread.sleep(8);
 
-                    frames++;
-                    long now = System.currentTimeMillis();
-                    if(now - lastFpsTime >= 1000){
-                        System.out.println("FPS: " + frames);
-                        frames = 0;
-                        lastFpsTime = now;
-                    }
-                    previousTime = currentTime;
-                    currentTime = (System.currentTimeMillis());
-                    tm.emptyTiles();
-                    // break;
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
+        //             frames++;
+        //             long now = System.currentTimeMillis();
+        //             if(now - lastFpsTime >= 1000){
+        //                 System.out.println("FPS: " + frames);
+        //                 frames = 0;
+        //                 lastFpsTime = now;
+        //             }
+        //             previousTime = currentTime;
+        //             currentTime = (System.currentTimeMillis());
+        //             tm.emptyTiles();
+        //             // break;
+        //         } catch (Exception e) {
+        //             e.printStackTrace();
+        //         }
+        //     }
         }
     }
     static void renderEntity(CameraManager cm, WindowManager wm, TileManager tm, Entity et){

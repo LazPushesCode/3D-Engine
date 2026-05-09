@@ -7,6 +7,7 @@ public class Entity {
     //keep
     double[] vertices;
     int[] indices;
+    double [] uvMap;
     double [][][] textureMapping; 
     BufferedImage texture;
     Matrix oldTransformation;
@@ -28,6 +29,8 @@ public class Entity {
     ArrayList<double[][]> finalTextureMapping;
 
     int ID;
+
+    static final int STRIDE = 4;
 
 
     Entity(){
@@ -69,11 +72,11 @@ public class Entity {
     }
     double[] convertVectorsToWorldSpace(){
         double [] worldVectors = new double[vertices.length];
-        for(int v = 0; v < vertices.length; v+=4){
+        for(int v = 0; v < vertices.length; v+=STRIDE){
             for(int i = 0; i < 4; i++){
                 worldVectors[v + i] = 0;
                 for(int j = 0; j < 4; j++){
-                    worldVectors[v + i] += transformation.data[(i*4) + j] * vertices[v + j];
+                    worldVectors[v + i] += transformation.data[(i*STRIDE) + j] * vertices[v + j];
                 }
             }
         }
@@ -96,16 +99,17 @@ public class Entity {
             e.printStackTrace();
         }
     }
-    void initializeArrays(double [] givenVertices, int [] givenIndices){
+    void initializeArrays(double [] givenVertices, int [] givenIndices, double[] givenUV){
         vertices = new double[givenVertices.length+(givenVertices.length/3)];
         indices = givenIndices;
+        uvMap = givenUV;
         int currentIndex = 0;
         for(int i = 0; i < givenVertices.length; i+=3){
             vertices[currentIndex] = givenVertices[i];
             vertices[currentIndex+1] = givenVertices[i+1];
             vertices[currentIndex+2] = givenVertices[i+2];
             vertices[currentIndex+3] = 1;
-            currentIndex += 4;
+            currentIndex += STRIDE;
         }
     }
     void initializeVectorSpaces(double [][] vertices){
@@ -193,7 +197,10 @@ public class Entity {
             {4,6,5}, 
             {7,5,6} 
         };
-        initializeArrays(cubeVertices, cubeIndices);
+        double [] uvMapping = {
+
+        };
+        initializeArrays(cubeVertices, cubeIndices, uvMapping);
 
         initializeVectorSpaces(vertices);
         initializeVariables();

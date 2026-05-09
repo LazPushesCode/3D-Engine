@@ -30,7 +30,7 @@ public class Tile {
         localDepthBuffer = new double[(int)tileWidth][(int)tileLength];
         for (int i = 0; i < (int)tileWidth; i++) {
             java.util.Arrays.fill(localColorBuffer[i], 0); 
-            java.util.Arrays.fill(localDepthBuffer[i], 10000); 
+            java.util.Arrays.fill(localDepthBuffer[i], 0); 
         }
     }
     void emptyTileData(){
@@ -43,7 +43,7 @@ public class Tile {
         modelTextureID.clear();
         for (int i = 0; i < (int)tileWidth; i++) {
             java.util.Arrays.fill(localColorBuffer[i], 0); 
-            java.util.Arrays.fill(localDepthBuffer[i], 100000); 
+            java.util.Arrays.fill(localDepthBuffer[i], 0); 
         }
     }
     void displayTileData(){

@@ -4,6 +4,8 @@ public class Scene {
     HashMap<Integer, Entity> entities;
     HashMap<Integer, CameraManager> cameras;
 
+    static final int STRIDE = 4;
+
     int entityCount;
     int cameraCount;
 
@@ -59,7 +61,7 @@ public class Scene {
             double[] entityWorldVectors = e.convertVectorsToWorldSpace();
             System.arraycopy(entityWorldVectors, 0, globalVertices, currentVerticesIndex, entityWorldVectors.length);
         
-            int offset = currentVerticesIndex / 4;
+            int offset = currentVerticesIndex / STRIDE;
             e.globalVerticeOffset = offset;
             for(int i = 0; i < e.indices.length; i++){
                 globalIndices[currentIndicesIndex+i] = e.indices[i] + offset;
@@ -74,7 +76,7 @@ public class Scene {
     void convertVerticesToViewSpace(){
         CameraManager cm = cameras.get(cameraFocused);
         double[] vm = cm.viewMatrix.data;
-        for(int v = 0; v < currentVerticesSize; v+=4){
+        for(int v = 0; v < currentVerticesSize; v+=STRIDE){
             double x = globalVertices[v];
             double y = globalVertices[v+1];
             double z = globalVertices[v+2];
@@ -87,7 +89,7 @@ public class Scene {
     } 
     void convertVerticesToClipSpace(){
         double [] pm = cameras.get(cameraFocused).projectionMatrix.data;
-        for(int v = 0; v < currentVerticesSize; v+= 4){
+        for(int v = 0; v < currentVerticesSize; v+= STRIDE){
             double x = globalVertices[v];
             double y = globalVertices[v+1];
             double z = globalVertices[v+2];
@@ -111,7 +113,7 @@ public class Scene {
     void convertToNDC(WindowManager wm, TileManager tm){
         int width = wm.width;
         int length = wm.length;
-        for(int i = 0; i < currentVerticesSize; i+= 4){
+        for(int i = 0; i < currentVerticesSize; i+= STRIDE){
             globalVertices[i] = (1+globalVertices[i]) * 0.5 * width;
             globalVertices[i+1] = ((1-globalVertices[i+1]) * 0.5 * length);
         }
@@ -121,9 +123,9 @@ public class Scene {
         cameraCount++;
     }
     public void addProcessedTriangle(int v0, int v1, int v2){
-        processedIndices[processedIndicesSize++] = v0 * 4;
-        processedIndices[processedIndicesSize++] = v1 * 4;
-        processedIndices[processedIndicesSize++] = v2 * 4;
+        processedIndices[processedIndicesSize++] = v0 * STRIDE;
+        processedIndices[processedIndicesSize++] = v1 * STRIDE;
+        processedIndices[processedIndicesSize++] = v2 * STRIDE;
     }
     public void printSceneData(){
         System.out.println("current Vertices size: " + currentVerticesSize);

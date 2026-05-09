@@ -32,7 +32,6 @@ public class CameraManager {
         this.speed = 0.005;
         viewMatrix = Matrix.Identity();
         projectionMatrix = Matrix.Identity();
-
         oldViewMatrix = Matrix.identity();
         oldProjectionMatrix = Matrix.identity();
         updateCameraMatrix();
