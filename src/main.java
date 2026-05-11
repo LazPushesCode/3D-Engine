@@ -5,10 +5,9 @@ import java.util.concurrent.Executors;
 
 public class main{
     public static void main(String[] args){
-        WindowManager wm = new WindowManager(1200, 600);
+        WindowManager wm = new WindowManager(1920, 1080);
         CameraManager cm = new CameraManager(wm.width, wm.length,100);
         InputManager im = new InputManager();
-
 
         cm.setCameraPosition(0, 2, 0);
         
@@ -19,20 +18,20 @@ public class main{
         Scene world = new Scene();
         world.addCamera(cm);
 
-        for(int i = -5; i < 5; i++){
-            for(int j = -5; j < 5; j++){
-                Entity cube = new Entity();
-                cube.cubeMesh();
-                cube.setWorldPosition(i, 0, j);
-                world.addEntity(cube);
-                cube.setTexture("C:\\Users\\lazar\\3D-Engine\\resources\\assets\\11635.png");
-            }
-        }
+        // for(int i = -10; i < 10; i++){
+        //     for(int j = -10; j < 10; j++){
+        //         Entity cube = new Entity();
+        //         cube.cubeMesh();
+        //         cube.setWorldPosition(i, 0, j);
+        //         world.addEntity(cube);
+        //         cube.setTexture("C:\\Users\\lazar\\3D-Engine\\resources\\assets\\11635.png");
+        //     }
+        // }
 
-        // Entity cube = new Entity();
-        // cube.cubeMesh();
-        // cube.setWorldPosition(-2, 2, 2);
-        // world.addEntity(cube);
+        Entity cube = new Entity();
+        cube.cubeMesh();
+        cube.setWorldPosition(-2, 2, 2);
+        world.addEntity(cube);
 
         // Entity cube2 = new Entity();
         // cube2.cubeMesh();

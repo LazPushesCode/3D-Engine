@@ -167,6 +167,23 @@ public class Entity {
             7,5,6 
         };
 
+        double [] uvMapping = {
+            0, 0,   1, 0,   1, 1,
+            0, 0,   1, 1,   0, 1,
+
+            0, 0,   1, 0,   1, 1,
+            0, 0,   1, 1,   0, 1,
+
+            0, 0,   1, 0,   1, 1,
+            0, 0,   1, 1,   0, 1,
+
+            0, 1,   0, 0,   1, 0,
+            0, 1,   1, 0,   1, 1,
+
+            1, 0,   0, 0,   0, 1,
+            0, 1,   1, 1,   0, 0
+        };
+
         double [][] vertices = {
             {0.5,0.5,0.5}, //0
             {-0.5,0.5,0.5}, //1
@@ -196,9 +213,6 @@ public class Entity {
             //bottom
             {4,6,5}, 
             {7,5,6} 
-        };
-        double [] uvMapping = {
-
         };
         initializeArrays(cubeVertices, cubeIndices, uvMapping);
 
