@@ -30,7 +30,7 @@ public class Entity {
 
     int ID;
 
-    static final int STRIDE = 4;
+    static final int STRIDE = 6;
 
 
     Entity(){
@@ -76,9 +76,11 @@ public class Entity {
             for(int i = 0; i < 4; i++){
                 worldVectors[v + i] = 0;
                 for(int j = 0; j < 4; j++){
-                    worldVectors[v + i] += transformation.data[(i*STRIDE) + j] * vertices[v + j];
+                    worldVectors[v + i] += transformation.data[(i*4) + j] * vertices[v + j];
                 }
             }
+            worldVectors[v+4] = vertices[v+4];
+            worldVectors[v+5] = vertices[v+5]; 
         }
         return worldVectors;
     }
@@ -99,18 +101,19 @@ public class Entity {
             e.printStackTrace();
         }
     }
-    void initializeArrays(double [] givenVertices, int [] givenIndices, double[] givenUV){
-        vertices = new double[givenVertices.length+(givenVertices.length/3)];
+    void initializeArrays(double [] givenVertices, int [] givenIndices){
+        vertices = givenVertices;
         indices = givenIndices;
-        uvMap = givenUV;
         int currentIndex = 0;
-        for(int i = 0; i < givenVertices.length; i+=3){
-            vertices[currentIndex] = givenVertices[i];
-            vertices[currentIndex+1] = givenVertices[i+1];
-            vertices[currentIndex+2] = givenVertices[i+2];
-            vertices[currentIndex+3] = 1;
-            currentIndex += STRIDE;
-        }
+        // for(int i = 0; i < givenVertices.length; i+=STRIDE){
+        //     vertices[currentIndex] = givenVertices[i];
+        //     vertices[currentIndex+1] = givenVertices[i+1];
+        //     vertices[currentIndex+2] = givenVertices[i+2];
+        //     vertices[currentIndex+3] = givenVertices[i+3];
+        //     vertices[currentIndex+4] = givenVertices[i+4];
+        //     vertices[currentIndex+5] = givenVertices[i+5];
+        //     currentIndex += STRIDE;
+        // }
     }
     void initializeVectorSpaces(double [][] vertices){
         int rowLength = vertices.length;
@@ -137,53 +140,96 @@ public class Entity {
     }
     void cubeMesh(){
         double [] cubeVertices = {
-            0.5,0.5,0.5, //0
-            -0.5,0.5,0.5, //1
-            0.5,0.5,-0.5, //2
-            -0.5,0.5,-0.5, //3
-            0.5,-0.5,0.5, //4
-            0.5, -0.5, -0.5, //5
-            -0.5,-0.5,0.5, //6
-            -0.5,-0.5,-0.5 //7
+            // 0.5,0.5,0.5,1, 1, 0,//0
+            // -0.5,0.5,0.5,1, 0, 0,//1
+            // 0.5,0.5,-0.5,1, 1, 0,//2
+            // -0.5,0.5,-0.5,1, 0, 0,//3
+            // 0.5,-0.5,0.5,1, 1, 1,//4
+            // 0.5, -0.5, -0.5,1, 1, 1,//5
+            // -0.5,-0.5,0.5,1, 0, 0,//6
+            // -0.5,-0.5,-0.5,1, 0, 1,//7
+
+            //top
+            0.5,0.5,0.5,1, 1, 0,//0
+            -0.5,0.5,0.5,1, 0, 0,//1
+            0.5,0.5,-0.5,1, 1, 1,//2
+            -0.5,0.5,-0.5,1, 0, 1,//3
+
+            //front
+            0.5,0.5,-0.5,1, 1, 0,//4
+            -0.5,0.5,-0.5,1, 0, 0,//5
+            0.5, -0.5, -0.5,1, 1, 1,//6
+            -0.5,-0.5,-0.5,1, 0, 1,//7
+
+            //right
+            0.5,0.5,0.5,1, 1, 0,//8
+            0.5,0.5,-0.5,1, 0, 0,//9
+            0.5,-0.5,0.5,1, 1, 1,//10
+            0.5,-0.5,-0.5,1, 0, 1,//11
+
+            //left
+            -0.5,0.5,0.5,1, 0, 0,//12
+            -0.5,0.5,-0.5,1, 1, 0,//13
+            -0.5,-0.5,0.5,1, 0, 1,//14
+            -0.5,-0.5,-0.5,1, 1, 1,//15
+
+            //back
+            0.5,0.5,0.5,1, 1, 0,//16
+            -0.5,0.5,0.5,1, 0, 0,//17
+            0.5,-0.5,0.5,1, 1, 1,//18
+            -0.5,-0.5,0.5,1, 0, 1,//19
+
+            //bottom
+            0.5,-0.5,0.5,1, 1, 0,//20
+            0.5, -0.5, -0.5,1, 1, 1,//21
+            -0.5,-0.5,0.5,1, 0, 0,//22
+            -0.5,-0.5,-0.5,1, 0, 1,//23
+            
         };
         int [] cubeIndices = {
-            // top
-            1,0,2,
-            1,2,3,
+            //top
+            0, 2, 1,
+            2, 3, 1,
+
             //front
-            3,2,5,
-            3,5,7,
+            5, 4, 6,
+            5, 6, 7,
+
             //right
-            2,0,4,
-            2,4,5,
-            // left
-            6, 1, 7,
-            7,1,3,
+            9, 8, 10,
+            9, 10, 11,
+
+            //left
+            12, 13, 15,
+            12, 15, 14,
+
             //back
-            4,0,1,
-            4,1,6,
+            16, 17, 19,
+            16, 19, 18,
+
             //bottom
-            4,6,5, 
-            7,5,6 
+            20, 22, 23,
+            20, 23, 21
+
+            // // top
+            // 1,0,2,
+            // 1,2,3,
+            // // //front
+            // 3,2,5,
+            // 3,5,7,
+            // // //right
+            // 2,0,4,
+            // 2,4,5,
+            // // // left
+            // 6, 1, 7,
+            // 7,1,3,
+            // // //back
+            // 4,0,1,
+            // 4,1,6,
+            // // //bottom
+            // 4,6,5, 
+            // 7,5,6 
         };
-
-        double [] uvMapping = {
-            0, 0,   1, 0,   1, 1,
-            0, 0,   1, 1,   0, 1,
-
-            0, 0,   1, 0,   1, 1,
-            0, 0,   1, 1,   0, 1,
-
-            0, 0,   1, 0,   1, 1,
-            0, 0,   1, 1,   0, 1,
-
-            0, 1,   0, 0,   1, 0,
-            0, 1,   1, 0,   1, 1,
-
-            1, 0,   0, 0,   0, 1,
-            0, 1,   1, 1,   0, 0
-        };
-
         double [][] vertices = {
             {0.5,0.5,0.5}, //0
             {-0.5,0.5,0.5}, //1
@@ -214,7 +260,7 @@ public class Entity {
             {4,6,5}, 
             {7,5,6} 
         };
-        initializeArrays(cubeVertices, cubeIndices, uvMapping);
+        initializeArrays(cubeVertices, cubeIndices);
 
         initializeVectorSpaces(vertices);
         initializeVariables();

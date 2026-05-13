@@ -26,7 +26,7 @@ public class TileManager {
         }
     }
     void assignTrianglesToTiles(Scene s, WindowManager wm){
-        for(int i = 0; i < s.processedIndicesSize; i+=3){
+        for(int i = 0; i < s.processedIndicesSize; i+=4){
             double xMin = wm.width;
             double xMax = 0;
             double yMin = wm.length;
@@ -34,7 +34,7 @@ public class TileManager {
             double x = 0;
             double y = 0;
             int v = 0;
-            for(int j = i; j < (i+3); j++){
+            for(int j = i; j < (i+4); j++){
                 v = s.processedIndices[j];
                 x = s.globalVertices[v];
                 y = s.globalVertices[v+1];
@@ -54,7 +54,8 @@ public class TileManager {
                     tiles.get(t).visibleIndices[triangleIndex] = s.processedIndices[i];
                     tiles.get(t).visibleIndices[triangleIndex+1] = s.processedIndices[i+1];
                     tiles.get(t).visibleIndices[triangleIndex+2] = s.processedIndices[i+2];
-                    tiles.get(t).indicesCount += 3;
+                    tiles.get(t).visibleIndices[triangleIndex+3] = s.processedIndices[i+3];
+                    tiles.get(t).indicesCount += 4;
                 }
             }
         }

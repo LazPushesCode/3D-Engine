@@ -1,31 +1,37 @@
 import java.util.ArrayList;
 
+
 public class TriangleManager {
+
+    static final int INDICE_STRIDE = 4;
+
     static void cullOperations(Scene s){
         int validIndices[] = new int[s.currentIndicesSize];
         int currentIndex = 0;
-        for(int i = 0; i < s.currentIndicesSize; i+=3){
+        for(int i = 0; i < s.currentIndicesSize; i+=4){
             int p0 = s.globalIndices[i];
             int p1 = s.globalIndices[i+1];
             int p2 = s.globalIndices[i+2];
+            int entityID = s.globalIndices[i+3];
             if(determineDirection(s.globalVertices, p0, p1, p2) <= 0){
                 continue;
             }
             validIndices[currentIndex] = p0;
             validIndices[currentIndex+1] = p1;
             validIndices[currentIndex+2] = p2;
-            currentIndex+=3;
+            validIndices[currentIndex+3] = entityID;
+            currentIndex+=4;
         }
         s.convertVerticesToClipSpace();
         processValidIndices(s, validIndices, currentIndex);
     }
     static void processValidIndices(Scene s, int[] validIndices, int validIndicesSize){
-        for(int i = 0; i < validIndicesSize; i+=3){
+        for(int i = 0; i < validIndicesSize; i+=4){
             boolean discard = false;
             boolean clip = false;
             for(int p = 0; p < 6; p++){
                 int pointsOutsidePlane = 0;
-                for(int j = i; j < (i+3); j++){
+                for(int j = i; j < (i+4); j++){
                     int index = validIndices[j]*Scene.STRIDE;
                     double xm = s.globalVertices[index];
                     double ym = s.globalVertices[index+1];
@@ -76,10 +82,10 @@ public class TriangleManager {
                 continue;
             }
             if(clip){
-                clipTriangle(s, validIndices[i], validIndices[i+1], validIndices[i+2]);
+                clipTriangle(s, validIndices[i], validIndices[i+1], validIndices[i+2], validIndices[i+3]);
                 continue;
             }
-            s.addProcessedTriangle(validIndices[i], validIndices[i+1], validIndices[i+2]);
+            s.addProcessedTriangle(validIndices[i], validIndices[i+1], validIndices[i+2], validIndices[i+3]);
         }
         s.perspectiveDivideVectors();
     }
@@ -249,7 +255,7 @@ public class TriangleManager {
         };
         return n[0]*v[0] + n[1]*v[1] + n[2]*v[2];
     }
-    static void clipTriangle(Scene s, int v0, int v1, int v2){
+    static void clipTriangle(Scene s, int v0, int v1, int v2, int entityID){
         
         int[] input = new int[12];
         int[] output = new int[12];
@@ -283,12 +289,12 @@ public class TriangleManager {
         output = temp;
         inputSize = outputSize;
         }
-        distributeIndices(s, input, inputSize);
+        distributeIndices(s, input, inputSize, entityID);
     }
-    static void distributeIndices(Scene s, int[] input, int inputSize){
+    static void distributeIndices(Scene s, int[] input, int inputSize, int entityID){
         if(inputSize < 3) return;
         for(int i = 1; i < inputSize-1; i++){
-            s.addProcessedTriangle(input[0], input[i], input[i+1]);
+            s.addProcessedTriangle(input[0], input[i], input[i+1], entityID);
         }
     }
     static TrianglePackage clipTriangle(ArrayList<Integer> t, Entity m, double[][] textureCords){
@@ -411,7 +417,15 @@ public class TriangleManager {
         for(int i = 0; i < 4; i++){
             s.globalVertices[newIndice + i] = s.globalVertices[p1+i] + t*(s.globalVertices[p2+i] - s.globalVertices[p1+i]);
         }
-        s.currentVerticesSize += 4;
+        double u1 = s.globalVertices[p1+4];
+        double v1 = s.globalVertices[p1+5];
+
+        double u2 = s.globalVertices[p2+4];
+        double v2 = s.globalVertices[p2+5];
+
+        s.globalVertices[newIndice+4] = u1 + t*(u2 - u1);
+        s.globalVertices[newIndice+5] = v1 + t*(v2 - v1);
+        s.currentVerticesSize += 6;
         return (newIndice/scene);
     }
     static double[] calculateIntersection(double[] p1, double[] p2, double[] uv1, double[] uv2, int plane){

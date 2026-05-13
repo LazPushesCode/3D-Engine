@@ -5,7 +5,7 @@ import java.util.concurrent.Executors;
 
 public class main{
     public static void main(String[] args){
-        WindowManager wm = new WindowManager(1920, 1080);
+        WindowManager wm = new WindowManager(1920, 1200);
         CameraManager cm = new CameraManager(wm.width, wm.length,100);
         InputManager im = new InputManager();
 
@@ -31,6 +31,8 @@ public class main{
         Entity cube = new Entity();
         cube.cubeMesh();
         cube.setWorldPosition(-2, 2, 2);
+        cube.scale(10, 10, 10);
+        cube.setTexture("C:\\Users\\lazar\\3D-Engine\\resources\\assets\\11635.png");
         world.addEntity(cube);
 
         // Entity cube2 = new Entity();
@@ -88,6 +90,7 @@ public class main{
                             System.out.println("FPS: " + frames);
                             frames = 0;
                             lastFpsTime = now;
+                            // world.printSceneData();
                         }
                         previousTime = currentTime;
                         currentTime = (System.currentTimeMillis());

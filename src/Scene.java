@@ -1,10 +1,12 @@
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Map;
 public class Scene {
     HashMap<Integer, Entity> entities;
     HashMap<Integer, CameraManager> cameras;
 
-    static final int STRIDE = 4;
+    static final int STRIDE = 6;
+    static final int PROCESSED_STRIDE = 3;
 
     int entityCount;
     int cameraCount;
@@ -38,9 +40,9 @@ public class Scene {
         entityCount++;
     }
     void bindVertices(){
-        initialVerticesSize = entities.size() * 100;
+        initialVerticesSize = entities.size() * 300;
         globalVertices = new double[initialVerticesSize];
-        initialIndicesSize = entities.size() * 40;
+        initialIndicesSize = entities.size() * 60;
         globalIndices = new int[initialIndicesSize];
         processedIndices = new int[initialIndicesSize*2];
     }
@@ -57,18 +59,32 @@ public class Scene {
     void convertVerticesToWorldSpace(){
         int currentVerticesIndex = 0;
         int currentIndicesIndex = 0;
-        for(Entity e : entities.values()){
+        for(Map.Entry<Integer, Entity> entry : entities.entrySet()){
+            int ID = entry.getKey();
+            Entity e = entities.get(ID);
+
             double[] entityWorldVectors = e.convertVectorsToWorldSpace();
             System.arraycopy(entityWorldVectors, 0, globalVertices, currentVerticesIndex, entityWorldVectors.length);
-        
+            
             int offset = currentVerticesIndex / STRIDE;
             e.globalVerticeOffset = offset;
-            for(int i = 0; i < e.indices.length; i++){
-                globalIndices[currentIndicesIndex+i] = e.indices[i] + offset;
+            int indicesLength = e.indices.length;
+            
+            int index = currentIndicesIndex;
+
+            for(int i = 0; i < indicesLength; i+=3){
+                globalIndices[index] = e.indices[i] + offset;
+                globalIndices[index+1] = e.indices[i+1] + offset;
+                globalIndices[index+2] = e.indices[i+2] + offset;
+                globalIndices[index+3] = ID;
+                index += 4;
             }
+            // for(int i = 0; i < e.indices.length; i++){
+            //     globalIndices[currentIndicesIndex+i] = e.indices[i] + offset;
+            // }
             // System.arraycopy(e.indices, 0, globalIndices, currentIndicesIndex, e.indices.length);
             currentVerticesIndex += entityWorldVectors.length;
-            currentIndicesIndex += e.indices.length;
+            currentIndicesIndex = index;
         }
         currentIndicesSize =  currentIndicesIndex;
         currentVerticesSize = currentVerticesIndex;
@@ -101,7 +117,7 @@ public class Scene {
         }
     }
     void perspectiveDivideVectors(){
-        for(int i = 0; i < currentVerticesSize; i+=4){
+        for(int i = 0; i < currentVerticesSize; i+=STRIDE){
             double w = globalVertices[i + 3];
             if(w != 0){
                 globalVertices[i] /= globalVertices[i+3];
@@ -122,15 +138,17 @@ public class Scene {
         cameras.put(cameraCount, cm);
         cameraCount++;
     }
-    public void addProcessedTriangle(int v0, int v1, int v2){
+    public void addProcessedTriangle(int v0, int v1, int v2, int entityID){
         processedIndices[processedIndicesSize++] = v0 * STRIDE;
         processedIndices[processedIndicesSize++] = v1 * STRIDE;
         processedIndices[processedIndicesSize++] = v2 * STRIDE;
+        processedIndices[processedIndicesSize++] = entityID;
     }
     public void printSceneData(){
         System.out.println("current Vertices size: " + currentVerticesSize);
         System.out.println("current indices size: " + currentIndicesSize);
         System.out.println("processed indices size: " + processedIndicesSize);
         System.out.println(Arrays.toString(globalIndices));
+        System.out.println(Arrays.toString(globalVertices));
     }
 }
