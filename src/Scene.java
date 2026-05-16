@@ -1,4 +1,3 @@
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 public class Scene {
@@ -145,10 +144,10 @@ public class Scene {
         processedIndices[processedIndicesSize++] = entityID;
     }
     public void printSceneData(){
-        System.out.println("current Vertices size: " + currentVerticesSize);
-        System.out.println("current indices size: " + currentIndicesSize);
+        // System.out.println("current Vertices size: " + currentVerticesSize);
+        // System.out.println("current indices size: " + currentIndicesSize);
         System.out.println("processed indices size: " + processedIndicesSize);
-        System.out.println(Arrays.toString(globalIndices));
-        System.out.println(Arrays.toString(globalVertices));
+        // System.out.println(Arrays.toString(globalIndices));
+        // System.out.println(Arrays.toString(globalVertices));
     }
 }

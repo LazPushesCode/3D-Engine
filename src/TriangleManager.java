@@ -59,7 +59,7 @@ public class TriangleManager {
                             }
                             break;
                         case 4: // outside near plane
-                            if(zm < 0) {
+                            if(zm < -wm) {
                                 pointsOutsidePlane++;
                             }
                             break;
@@ -70,7 +70,7 @@ public class TriangleManager {
                             break;
                     }
                 }
-                if(pointsOutsidePlane == 3){
+                if(pointsOutsidePlane > 3){
                     discard = true;
                     break;
                 }
@@ -359,6 +359,8 @@ public class TriangleManager {
                 return ((w - y) >= 0);
             case 4:
                 return (z >= 0);
+            case 5: 
+                return ((w - z) >= 0);
             default:
                 throw new AssertionError();
         }
@@ -383,7 +385,8 @@ public class TriangleManager {
         int scene = Scene.STRIDE;
         p1 *= scene;
         p2 *= scene;
-        double fp1, fp2;
+        double fp1= 0;
+        double fp2 = 0;
         switch (plane) {
             case 0:
                 fp1 = s.globalVertices[p1+3] + s.globalVertices[p1]; 
@@ -409,8 +412,6 @@ public class TriangleManager {
                 fp1 = s.globalVertices[p1 + 3] - s.globalVertices[p1 + 2]; 
                 fp2 = s.globalVertices[p2 + 3] - s.globalVertices[p2 + 2];
                 break;
-            default:
-                throw new AssertionError();
         }
         double t = fp1 / (fp1 - fp2);
         int newIndice = s.currentVerticesSize;

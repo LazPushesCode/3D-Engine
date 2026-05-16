@@ -5,7 +5,7 @@ import java.util.concurrent.Executors;
 
 public class main{
     public static void main(String[] args){
-        WindowManager wm = new WindowManager(1920, 1200);
+        WindowManager wm = new WindowManager(1200, 600);
         CameraManager cm = new CameraManager(wm.width, wm.length,100);
         InputManager im = new InputManager();
 
@@ -31,15 +31,8 @@ public class main{
         Entity cube = new Entity();
         cube.cubeMesh();
         cube.setWorldPosition(-2, 2, 2);
-        cube.scale(10, 10, 10);
         cube.setTexture("C:\\Users\\lazar\\3D-Engine\\resources\\assets\\11635.png");
         world.addEntity(cube);
-
-        // Entity cube2 = new Entity();
-        // cube2.cubeMesh();
-        // cube2.setWorldPosition(-1, 2, 2);
-        // world.addEntity(cube2);
-        // cube2.setTexture("C:\\Users\\lazar\\3D-Engine\\resources\\assets\\11635.png");
 
         long currentTime = (System.currentTimeMillis());
         long previousTime = 0;
@@ -54,95 +47,51 @@ public class main{
         int frames = 0;
         long lastFpsTime = System.currentTimeMillis();
 
-        boolean newSystem = true;
-        
-        if(newSystem){
-            while(true){
-                try{
-                    deltaTime = (currentTime - previousTime)%1000;
-                    wm.clearScreen();
-                    cm.pollInput(im, wm, deltaTime);
-                    cm.updateCameraMatrix();
-                    world.transformEntities();
-                    world.convertVerticesToWorldSpace();
-                    world.convertVerticesToViewSpace();
-                    TriangleManager.cullOperations(world);
-                    world.convertToNDC(wm, tm);
-                    tm.assignTrianglesToTiles(world, wm);
-                        CountDownLatch latch = new CountDownLatch(tm.tiles.size());
-                        for(int i = 0; i < tm.tiles.size(); i++){
-                            final int index = i;
-                            tilePool.execute(() -> {
-                                try {
-                                    wm.renderTile(tm.tiles.get(index), world, cm);
-                                } finally {
-                                    latch.countDown();
-                                }
-                            });
-                        }
-                        latch.await();
-                        wm.updateScreen(tm);
-                        if(wm.errorOccured) break;
-                        Thread.sleep(1);
-                        frames++;
-                        long now = System.currentTimeMillis();
-                        if(now - lastFpsTime >= 1000){
-                            System.out.println("FPS: " + frames);
-                            frames = 0;
-                            lastFpsTime = now;
-                            // world.printSceneData();
-                        }
-                        previousTime = currentTime;
-                        currentTime = (System.currentTimeMillis());
-                        world.resetSceneFrameData();
-                        tm.emptyTiles();
-                        // break;
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    return;
-                }
-            }
-        }
-        if(!newSystem){
-        //     while(true){
-        //         try {
-        //             deltaTime = (currentTime - previousTime)%1000;
-        //             wm.clearScreen();
-        //             cm.pollInput(im, wm, deltaTime);
-        //             cm.updateCameraMatrix();
-        //             for(Entity et : world.entities.values()){
-        //                 renderEntity(world.cameras.get(0), wm, tm, et);
-        //             }
-        //             CountDownLatch latch = new CountDownLatch(tm.tiles.size());
-        //             for(int i = 0; i < tm.tiles.size(); i++){
-        //                 final int index = i;
-        //                 tilePool.execute(() -> {
-        //                     try {
-        //                         wm.oldRenderTile(cm, tm.tiles.get(index), world);
-        //                     } finally {
-        //                         latch.countDown();
-        //                     }
-        //                 });
-        //             }
-        //             latch.await();
-        //             wm.updateScreen(tm);
-        //             Thread.sleep(8);
-
-        //             frames++;
-        //             long now = System.currentTimeMillis();
-        //             if(now - lastFpsTime >= 1000){
-        //                 System.out.println("FPS: " + frames);
-        //                 frames = 0;
-        //                 lastFpsTime = now;
-        //             }
-        //             previousTime = currentTime;
-        //             currentTime = (System.currentTimeMillis());
-        //             tm.emptyTiles();
-        //             // break;
-        //         } catch (Exception e) {
-        //             e.printStackTrace();
-        //         }
-        //     }
+        while(true){
+            try{
+                deltaTime = (currentTime - previousTime)%1000;
+                wm.clearScreen();
+                cm.pollInput(im, wm, deltaTime);
+                cm.updateCameraMatrix();
+                world.transformEntities();
+                world.convertVerticesToWorldSpace();
+                world.convertVerticesToViewSpace();
+                TriangleManager.cullOperations(world);
+                world.convertToNDC(wm, tm);
+                tm.assignTrianglesToTiles(world, wm);
+                    CountDownLatch latch = new CountDownLatch(tm.tiles.size());
+                    for(int i = 0; i < tm.tiles.size(); i++){
+                        final int index = i;
+                        tilePool.execute(() -> {
+                            try {
+                                wm.renderTile(tm.tiles.get(index), world, cm);
+                            } finally {
+                                latch.countDown();
+                            }
+                        });
+                    }
+                    latch.await();
+                    wm.updateScreen(tm);
+                    if(wm.errorOccured) break;
+                    Thread.sleep(1);
+                    frames++;
+                    long now = System.currentTimeMillis();
+                    if(now - lastFpsTime >= 1000){
+                        System.out.println("FPS: " + frames);
+                        frames = 0;
+                        lastFpsTime = now;
+                        // tm.displayTileIndiceData();
+                        //    world.printSceneData();
+                    }
+                    previousTime = currentTime;
+                    currentTime = (System.currentTimeMillis());
+                    world.resetSceneFrameData();
+                    tm.emptyTiles();
+                    // break;
+            } catch (Exception e) {
+                e.printStackTrace();
+                return;
+             }
         }
     }
     static void renderEntity(CameraManager cm, WindowManager wm, TileManager tm, Entity et){

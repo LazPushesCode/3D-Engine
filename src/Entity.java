@@ -287,6 +287,20 @@ public class Entity {
         oldTransformation = Matrix.identity();
         transformation = Matrix.Identity();
     }
+    void triangleMesh(){
+        double [] cubeVertices = {
+            0.5,0.5,-0.5,1, 1, 0,//0
+            -0.5,0.5,-0.5,1, 0, 0,//1
+            0.5, -0.5, -0.5,1, 1, 1,//2
+        };
+        int [] cubeIndices = {
+            //top
+            0, 2, 1
+        };
+        initializeArrays(cubeVertices, cubeIndices);
+        initializeVariables();
+        transformation = Matrix.Identity();
+    }
     void applyTexture(int triangle, double[][] textureCords){
         for(int i = 0; i < 3; i++){
             for(int j = 0; j < 2; j++){
