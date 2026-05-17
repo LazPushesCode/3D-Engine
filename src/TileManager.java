@@ -60,43 +60,6 @@ public class TileManager {
             }
         }
     }
-    void checkTriangleExistanceInTiles(Entity e, WindowManager wm){
-        for(int i = 0; i < e.finalIndices.size(); i++){
-            double xMin = wm.width;
-            double xMax = 0;
-            double yMin = wm.length;
-            double yMax = 0;
-            double x = 0;
-            double y = 0;
-            int v = 0;
-            for(int j = 0; j < e.finalIndices.get(i).length; j++){
-                v = e.finalIndices.get(i)[j];
-                x = e.finalVectors.get(v)[0];
-                y = e.finalVectors.get(v)[1];
-                if(x > xMax) xMax = x;
-                if(x < xMin) xMin = x;
-                if(y > yMax) yMax = y;
-                if(y < yMin) yMin = y;
-            }
-            // int minCol = (int) (xMin/this.tileWidth);
-            int minCol = Math.max(0, (int)(xMin/this.tileWidth));
-            int maxCol = Math.min(numCols - 1, (int)(xMax/this.tileWidth));
-            int minRow = Math.max(0,(int)(yMin/this.tileLength));
-            int maxRow = Math.min(numRows - 1, (int)(yMax/this.tileLength));
-            for(int r = minRow; r <= maxRow; r++){
-                for(int c = minCol; c <= maxCol; c++){
-                    int index = (numCols * r) + c;
-                    int[] indices = e.finalIndices.get(i);
-                    tiles.get(index).visibleTriangleList.add(indices);
-                    tiles.get(index).textureMapping.add(e.finalTextureMapping.get(i));
-                    tiles.get(index).modelTextureID.add(e.ID);
-                    for (int indice : indices) {
-                        tiles.get(index).vectorList.put(indice, e.finalVectors.get(indice));   
-                    }
-                }
-            }
-        }
-    }
     void displayTileIndiceData(){
         System.out.println("=========================");
         for(int i = 0; i < tiles.size(); i++){

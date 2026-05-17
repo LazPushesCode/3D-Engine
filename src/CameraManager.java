@@ -13,9 +13,6 @@ public class CameraManager {
     Matrix viewMatrix;
     Matrix projectionMatrix;
 
-    Matrix oldViewMatrix;
-    Matrix oldProjectionMatrix;
-
     double speed;
 
     CameraManager(int windowWidth, int windowLength, int fov){
@@ -32,47 +29,22 @@ public class CameraManager {
         this.speed = 0.005;
         viewMatrix = Matrix.Identity();
         projectionMatrix = Matrix.Identity();
-        oldViewMatrix = Matrix.identity();
-        oldProjectionMatrix = Matrix.identity();
         updateCameraMatrix();
     }
     void updateViewMatrix(){
-        oldViewMatrix = Matrix.rotatex(pitch)
-        .multiply2dMatrix(Matrix.rotatey(-yaw))
-        .multiply2dMatrix(Matrix.translate(-x,-y,-z));
-
         viewMatrix = Matrix.Rotatex(pitch)
         .multiply(Matrix.Rotatey(-yaw))
         .multiply(Matrix.Translate(-x,-y,-z));
     }
     void updateProjectionMatrix(){
         double t = 1/Math.tan(FOV/2);
-        double [][] temp = {
-            {t/aspect, 0, 0, 0},
-            {0, t, 0, 0},
-            {0, 0, -(far+near)/(near-far), -2*far*near/(near-far)},
-            {0, 0, 1, 0}
-        };
-        double [] temp2 = {
+        double [] temp = {
             t/aspect, 0, 0, 0,
             0, t, 0, 0,
             0, 0, -(far+near)/(near-far), -2*far*near/(near-far),
             0, 0, 1, 0
         };
-        oldProjectionMatrix.m = temp;
-        projectionMatrix.data = temp2;
-    }
-    void convertToViewSpace(Entity m){
-        for(int i = 0; i < m.worldSpaceVectors.length; i++){
-            double view[] = (oldViewMatrix.vectorTransformation(m.worldSpaceVectors[i]));
-            m.viewSpaceVectors.add(view);
-        }
-    }
-    void convertToClipSpace(Entity m){
-        for(int i = 0; i < m.viewSpaceVectors.size(); i++){
-            double clip[] = (oldProjectionMatrix.vectorTransformation(m.viewSpaceVectors.get(i)));
-            m.finalVectors.add(clip);            
-        }
+        projectionMatrix.data = temp;
     }
 
     CameraManager setCameraPosition(double x, double y, double z){
@@ -158,9 +130,6 @@ public class CameraManager {
     void updateCameraMatrix(){
         updateViewMatrix();
         updateProjectionMatrix();
-    }
-    void resetFrameData(){
-        oldViewMatrix = Matrix.identity();
     }
     void printCameraInfo(){
         System.out.println("x: " + x + " y: " + y + " z: " + z);

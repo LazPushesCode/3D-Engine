@@ -143,6 +143,7 @@ public class Scene {
         processedIndices[processedIndicesSize++] = v2 * STRIDE;
         processedIndices[processedIndicesSize++] = entityID;
     }
+
     public void printSceneData(){
         // System.out.println("current Vertices size: " + currentVerticesSize);
         // System.out.println("current indices size: " + currentIndicesSize);
