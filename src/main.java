@@ -17,59 +17,59 @@ public class main{
 
         Scene world = new Scene();
         world.addCamera(cm);
-        // for(int i = 0; i < 3; i++){
-        //     for(int j = 0; j < 3; j++){
-        //         for(int k = 0; k < 3; k++){
-        //             Entity cube = new Entity();
-        //             cube.cubeMesh();
-        //             cube.setWorldPosition(i, j, k);
-        //             world.addEntity(cube);
-        //             cube.setTexture("C:\\Users\\lazar\\3D-Engine\\resources\\assets\\11635.png");
-        //         }
-        //     }
-        // }
+        for(int i = -10; i < 10; i++){
+            for(int j = -10; j < 10; j++){
+                // for(int k = 0; k < 3; k++){
+                    Entity cube = new Entity();
+                    cube.cubeMesh();
+                    cube.setWorldPosition(i, j, 0);
+                    world.addEntity(cube);
+                    // cube.setTexture("C:\\Users\\lazar\\3D-Engine\\resources\\assets\\11635.png");
+                // }
+            }
+        }
 
-        Entity cube = new Entity();
-        cube.cubeMesh();
-        cube.setWorldPosition(0, 0, 0);
-        cube.setTexture("C:\\Users\\lazar\\3D-Engine\\resources\\assets\\11635.png");
-        world.addEntity(cube);
+        // Entity cube = new Entity();
+        // cube.cubeMesh();
+        // cube.setWorldPosition(0, 0, 0);
+        // cube.setTexture("C:\\Users\\lazar\\3D-Engine\\resources\\assets\\11635.png");
+        // world.addEntity(cube);
 
-        Entity wall = new Entity();
-        wall.cubeMesh();
-        wall.translate(10.5, 0, 0).rotatex(90).scale(20, 20,-0.9);
-        wall.setTexture("C:\\Users\\lazar\\3D-Engine\\resources\\assets\\11635.png");
-        world.addEntity(wall);
+        // Entity wall = new Entity();
+        // wall.cubeMesh();
+        // wall.translate(10.5, 0, 0).rotatex(90).scale(20, 20,-0.9);
+        // wall.setTexture("C:\\Users\\lazar\\3D-Engine\\resources\\assets\\11635.png");
+        // world.addEntity(wall);
 
-        Entity wall2 = new Entity();
-        wall2.cubeMesh();
-        wall2.translate(-10.5, 0, 0).rotatex(90).scale(20, 20,-0.9);
-        wall2.setTexture("C:\\Users\\lazar\\3D-Engine\\resources\\assets\\11635.png");
-        world.addEntity(wall2);
+        // Entity wall2 = new Entity();
+        // wall2.cubeMesh();
+        // wall2.translate(-10.5, 0, 0).rotatex(90).scale(20, 20,-0.9);
+        // wall2.setTexture("C:\\Users\\lazar\\3D-Engine\\resources\\assets\\11635.png");
+        // world.addEntity(wall2);
 
-        Entity wall3 = new Entity();
-        wall3.cubeMesh();
-        wall3.translate(0, 0, 10.5).rotatex(0).scale(20, 20,-0.9);
-        wall3.setTexture("C:\\Users\\lazar\\3D-Engine\\resources\\assets\\11635.png");
-        world.addEntity(wall3);
+        // Entity wall3 = new Entity();
+        // wall3.cubeMesh();
+        // wall3.translate(0, 0, 10.5).rotatex(0).scale(20, 20,-0.9);
+        // wall3.setTexture("C:\\Users\\lazar\\3D-Engine\\resources\\assets\\11635.png");
+        // world.addEntity(wall3);
 
-        Entity wall4 = new Entity();
-        wall4.cubeMesh();
-        wall4.translate(0, 0, -10.5).rotatex(0).scale(20, 20,-0.9);
-        wall4.setTexture("C:\\Users\\lazar\\3D-Engine\\resources\\assets\\11635.png");
-        world.addEntity(wall4);
+        // Entity wall4 = new Entity();
+        // wall4.cubeMesh();
+        // wall4.translate(0, 0, -10.5).rotatex(0).scale(20, 20,-0.9);
+        // wall4.setTexture("C:\\Users\\lazar\\3D-Engine\\resources\\assets\\11635.png");
+        // world.addEntity(wall4);
 
-        Entity floor = new Entity();
-        floor.cubeMesh();
-        floor.translate(0, -10.5, 0).rotatex(90).scale(20, -0.9,20);
-        floor.setTexture("C:\\Users\\lazar\\3D-Engine\\resources\\assets\\11635.png");
-        world.addEntity(floor);
+        // Entity floor = new Entity();
+        // floor.cubeMesh();
+        // floor.translate(0, -10.5, 0).rotatex(90).scale(20, -0.9,20);
+        // floor.setTexture("C:\\Users\\lazar\\3D-Engine\\resources\\assets\\11635.png");
+        // world.addEntity(floor);
 
-        Entity ceiling = new Entity();
-        ceiling.cubeMesh();
-        ceiling.translate(0, 10.5, 0).rotatex(90).scale(20, -0.9,20);
-        ceiling.setTexture("C:\\Users\\lazar\\3D-Engine\\resources\\assets\\11635.png");
-        world.addEntity(ceiling);
+        // Entity ceiling = new Entity();
+        // ceiling.cubeMesh();
+        // ceiling.translate(0, 10.5, 0).rotatex(90).scale(20, -0.9,20);
+        // ceiling.setTexture("C:\\Users\\lazar\\3D-Engine\\resources\\assets\\11635.png");
+        // world.addEntity(ceiling);
         
 
 
@@ -79,8 +79,12 @@ public class main{
 
         double deltaTime = 0;
         world.bindVertices();
+        world.initializeGlobalIndices();
         int cores = Runtime.getRuntime().availableProcessors();
+
         ExecutorService tilePool = Executors.newFixedThreadPool(cores);
+
+
         TileManager tm = new TileManager();
         tm.allocateTiles(2, 4, wm, world);
         
@@ -93,10 +97,19 @@ public class main{
                 wm.clearScreen();
                 cm.pollInput(im, wm, deltaTime);
                 cm.updateCameraMatrix();
-                world.transformEntities();
-                world.convertVerticesToWorldSpace();
-                world.convertVerticesToViewSpace();
+                world.assignEntitiesToThreads();
+
+                
+                world.entityConversions();
+                // world.transformEntities();
+                // world.convertToWorldThenViewSpace();
+                
+                // world.convertVerticesToWorldSpace();
+                // world.convertVerticesToViewSpace();
+
+
                 TriangleManager.cullOperations(world);
+
                 world.convertToNDC(wm, tm);
                 tm.assignTrianglesToTiles(world, wm);
                     CountDownLatch latch = new CountDownLatch(tm.tiles.size());

@@ -1,5 +1,8 @@
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 public class Scene {
     HashMap<Integer, Entity> entities;
     HashMap<Integer, CameraManager> cameras;
@@ -21,6 +24,10 @@ public class Scene {
     int processedIndicesSize;
     int currentVerticesSize;
 
+    int [] threadEntityOffsets;
+    int threadCount;
+    ExecutorService entityPool;
+
     Scene(){
         entities = new HashMap<>();
         cameras = new HashMap<>();
@@ -32,6 +39,9 @@ public class Scene {
         currentVerticesSize = 0;
         currentIndicesSize = 0;
         processedIndicesSize = 0;
+        threadCount = Runtime.getRuntime().availableProcessors();
+        threadEntityOffsets = new int[threadCount];
+        entityPool = Executors.newFixedThreadPool(threadCount);
     }
     void addEntity(Entity et){
         entities.put(entityCount, et);
@@ -46,31 +56,20 @@ public class Scene {
         processedIndices = new int[initialIndicesSize*2];
     }
     void resetSceneFrameData(){
-        currentIndicesSize = 0;
+        // currentIndicesSize = 0;
         processedIndicesSize = 0;
         currentVerticesSize = 0;
     }
-    void transformEntities(){
-        for(Entity e : entities.values()){
-            e.applyTransformationValues();
-        }
-    }
-    void convertVerticesToWorldSpace(){
-        int currentVerticesIndex = 0;
+    void initializeGlobalIndices(){
         int currentIndicesIndex = 0;
-        for(Map.Entry<Integer, Entity> entry : entities.entrySet()){
+        int currentVerticeLengthSnapshot = 0;
+         for(Map.Entry<Integer, Entity> entry : entities.entrySet()){
             int ID = entry.getKey();
             Entity e = entities.get(ID);
-
-            double[] entityWorldVectors = e.convertVectorsToWorldSpace();
-            System.arraycopy(entityWorldVectors, 0, globalVertices, currentVerticesIndex, entityWorldVectors.length);
-            
-            int offset = currentVerticesIndex / STRIDE;
+            int offset = currentVerticeLengthSnapshot / STRIDE;
             e.globalVerticeOffset = offset;
             int indicesLength = e.indices.length;
-            
             int index = currentIndicesIndex;
-
             for(int i = 0; i < indicesLength; i+=3){
                 globalIndices[index] = e.indices[i] + offset;
                 globalIndices[index+1] = e.indices[i+1] + offset;
@@ -78,14 +77,113 @@ public class Scene {
                 globalIndices[index+3] = ID;
                 index += 4;
             }
-            // for(int i = 0; i < e.indices.length; i++){
-            //     globalIndices[currentIndicesIndex+i] = e.indices[i] + offset;
-            // }
-            // System.arraycopy(e.indices, 0, globalIndices, currentIndicesIndex, e.indices.length);
-            currentVerticesIndex += entityWorldVectors.length;
+            currentVerticeLengthSnapshot += e.vertices.length;
             currentIndicesIndex = index;
+         }
+         currentIndicesSize =  currentIndicesIndex;
+    }
+    void assignEntitiesToThreads(){
+        // int batchSize = (int) Math.ceil((double) objects / threads);
+        int batch = (int) Math.ceil((double) entityCount / threadCount);
+        int currOffset = entityCount;
+        for(int i = threadCount-1; i >= 0; i--){
+            threadEntityOffsets[i] = currOffset;
+            currOffset -= batch;
+            if(currOffset < 0 ) currOffset = 0;
         }
-        currentIndicesSize =  currentIndicesIndex;
+    }
+    void entityConversions(){
+        currentVerticesSize = 0;
+        for(Entity e : entities.values()){
+            currentVerticesSize += e.vertices.length;
+        }
+        CountDownLatch latch = new CountDownLatch(threadCount);
+        CameraManager cm = cameras.get(cameraFocused);
+        int start = 0;
+        for(int i = 0; i < threadCount; i++){
+            final int threadStart = start;
+            int end = threadEntityOffsets[i];
+            entityPool.execute(() -> {
+                try {
+                    for(int j = threadStart; j < end; j++){
+                        transformEntity(j, cm);
+                    }
+                } finally {
+                    latch.countDown();
+                }
+            });
+            start = threadEntityOffsets[i];
+        }
+        try {
+            latch.await();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+    void transformEntity(int id, CameraManager cm){
+        Entity e = entities.get(id);
+        e.applyTransformationValues();
+        Matrix m = cm.viewMatrix.multiply(e.transformation);
+            double[] data = m.data;
+            double[] localMesh = e.vertices;
+            int start = e.globalVerticeOffset * STRIDE;
+            int end = start + localMesh.length;
+            int index = 0;
+            for(int v = start; v < end; v+= STRIDE){
+                double x = localMesh[index];
+                double y = localMesh[index+1];
+                double z = localMesh[index+2];
+                double w = localMesh[index+3];
+                globalVertices[v]   = data[0]*x  + data[1]*y  + data[2]*z  + data[3]*w;
+                globalVertices[v+1] = data[4]*x  + data[5]*y  + data[6]*z  + data[7]*w;
+                globalVertices[v+2] = data[8]*x  + data[9]*y  + data[10]*z + data[11]*w;
+                globalVertices[v+3] = data[12]*x + data[13]*y + data[14]*z + data[15]*w;
+
+                globalVertices[v+4] = localMesh[index+4];
+                globalVertices[v+5] = localMesh[index+5];
+                index += STRIDE;
+            }
+    }
+    void transformEntities(){
+        for(Entity e : entities.values()){
+            e.applyTransformationValues();
+        }
+    }
+    void convertToWorldThenViewSpace(){
+        CameraManager cm = cameras.get(cameraFocused);
+        int currentVerticesIndex = 0;
+        for(Entity e : entities.values()){
+            Matrix m = cm.viewMatrix.multiply(e.transformation);
+            double[] data = m.data;
+            double[] localMesh = e.vertices;
+            int start = e.globalVerticeOffset * STRIDE;
+            int end = start + localMesh.length;
+            int index = 0;
+            for(int v = start; v < end; v+= STRIDE){
+                double x = localMesh[index];
+                double y = localMesh[index+1];
+                double z = localMesh[index+2];
+                double w = localMesh[index+3];
+                globalVertices[v]   = data[0]*x  + data[1]*y  + data[2]*z  + data[3]*w;
+                globalVertices[v+1] = data[4]*x  + data[5]*y  + data[6]*z  + data[7]*w;
+                globalVertices[v+2] = data[8]*x  + data[9]*y  + data[10]*z + data[11]*w;
+                globalVertices[v+3] = data[12]*x + data[13]*y + data[14]*z + data[15]*w;
+
+                globalVertices[v+4] = localMesh[index+4];
+                globalVertices[v+5] = localMesh[index+5];
+                index += STRIDE;
+            }
+            currentVerticesIndex += localMesh.length;
+        }
+        currentVerticesSize = currentVerticesIndex;
+    }
+    void convertVerticesToWorldSpace(){
+        int currentVerticesIndex = 0;
+        for(Entity e : entities.values()){
+            double[] entityWorldVectors = e.convertVectorsToWorldSpace();
+            System.arraycopy(entityWorldVectors, 0, globalVertices, currentVerticesIndex, entityWorldVectors.length);
+            currentVerticesIndex += entityWorldVectors.length;
+        }
         currentVerticesSize = currentVerticesIndex;
     }
     void convertVerticesToViewSpace(){
