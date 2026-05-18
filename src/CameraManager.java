@@ -13,6 +13,8 @@ public class CameraManager {
     Matrix viewMatrix;
     Matrix projectionMatrix;
 
+    Matrix combinedMatrix;
+
     double speed;
 
     CameraManager(int windowWidth, int windowLength, int fov){
@@ -29,6 +31,7 @@ public class CameraManager {
         this.speed = 0.005;
         viewMatrix = Matrix.Identity();
         projectionMatrix = Matrix.Identity();
+        combinedMatrix = Matrix.Identity();
         updateCameraMatrix();
     }
     void updateViewMatrix(){
@@ -130,6 +133,7 @@ public class CameraManager {
     void updateCameraMatrix(){
         updateViewMatrix();
         updateProjectionMatrix();
+        combinedMatrix = projectionMatrix.multiply(viewMatrix);
     }
     void printCameraInfo(){
         System.out.println("x: " + x + " y: " + y + " z: " + z);

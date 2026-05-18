@@ -123,7 +123,7 @@ public class Scene {
     void transformEntity(int id, CameraManager cm){
         Entity e = entities.get(id);
         e.applyTransformationValues();
-        Matrix m = cm.viewMatrix.multiply(e.transformation);
+        Matrix m = cm.combinedMatrix.multiply(e.transformation);
             double[] data = m.data;
             double[] localMesh = e.vertices;
             int start = e.globalVerticeOffset * STRIDE;

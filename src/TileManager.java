@@ -1,6 +1,7 @@
 import java.util.ArrayList;
 public class TileManager {
     ArrayList<Tile> tiles;
+    int tileCount;
     double tileWidth, tileLength;
     int numRows, numCols;
     TileManager(){
@@ -16,7 +17,8 @@ public class TileManager {
         tileLength = wm.length/2;
         double xOffset = tileWidth;
         double yOffset = tileLength;
-        for(int i = 0; i < 8; i++){
+        tileCount = 8;
+        for(int i = 0; i < tileCount; i++){
             tiles.add(new Tile(xOffset, yOffset, tileWidth, tileLength, s.entityCount*40*2));
             xOffset += tileWidth;
             if(xOffset > wm.width){

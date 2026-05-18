@@ -7,12 +7,14 @@ public class TriangleManager {
     static void cullOperations(Scene s){
         int validIndices[] = new int[s.currentIndicesSize];
         int currentIndex = 0;
+        int trianglesCulled = 0;
         for(int i = 0; i < s.currentIndicesSize; i+=4){
             int p0 = s.globalIndices[i];
             int p1 = s.globalIndices[i+1];
             int p2 = s.globalIndices[i+2];
             int entityID = s.globalIndices[i+3];
             if(determineDirection(s.globalVertices, p0, p1, p2) <= 0){
+                trianglesCulled++;
                 continue;
             }
             validIndices[currentIndex] = p0;
@@ -21,7 +23,7 @@ public class TriangleManager {
             validIndices[currentIndex+3] = entityID;
             currentIndex+=4;
         }
-        s.convertVerticesToClipSpace();
+        // s.convertVerticesToClipSpace();
         processValidIndices(s, validIndices, currentIndex);
     }
     static void processValidIndices(Scene s, int[] validIndices, int validIndicesSize){

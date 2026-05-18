@@ -1,11 +1,16 @@
 import javax.swing.*;
+
 public class WindowManager {
     JFrame frame = new JFrame("");
     PixelPanel panel;
     int width;
     int length;
+
+    //keep
+
+    //remove
     int [][] colorBuffer;
-    double [][] depthBuffer;
+
     boolean displayTilesOnScreen;
     boolean errorOccured;
     WindowManager(int windowWidth, int windowHeight){
@@ -15,8 +20,9 @@ public class WindowManager {
         panel = new PixelPanel(width,length);
         panel.setFocusable(true);
         panel.requestFocusInWindow();
+
         colorBuffer = new int[width][length];
-        depthBuffer = new double[width][length];
+
         displayTilesOnScreen = false;
         errorOccured = false;
         populateBuffers();
@@ -34,7 +40,7 @@ public class WindowManager {
                 if(colorBuffer[i][j] != 0){
                     panel.setPixel(i,j, colorBuffer[i][j]);
                 }
-            }
+            } 
         }
         populateBuffers();
         panel.repaint();
@@ -48,12 +54,11 @@ public class WindowManager {
       return true;
     }
     void populateBuffers(){
-        for(int i = 0; i < width; i++){
-            for(int j = 0; j < length; j++){
-                colorBuffer[i][j] = 0;
-                depthBuffer[i][j] = 0;
-            }
-        }
+      for(int i = 0; i < width; i++){
+         for(int j = 0; j < length; j++){
+             colorBuffer[i][j] = 0;
+         }
+      }
     }
     void clearScreen(){
         panel.clear(0xFF000000); // opaque black
@@ -67,8 +72,9 @@ public class WindowManager {
          int y = (int) s.globalVertices[v+1];
          double z = s.globalVertices[v+2];
          if(localDepthTest(t, x, y, z)){
-            t.localDepthBuffer[x + (int)(t.tileWidth - t.xOffset)]
-            [y + (int)(t.tileLength - t.yOffset)] = z;
+            int xLocal = x + (int)(t.tileWidth - t.xOffset);
+            int yLocal = y + (int)(t.tileLength - t.yOffset);
+            t.localDepthBuffer[xLocal][yLocal] = (float)z;
          }
       }
       for(int i = 0; i < t.indicesCount; i+=4){
@@ -151,16 +157,16 @@ public class WindowManager {
       }
       // shows tile border
       if(!displayTilesOnScreen) return;
-      for(int i = 0; i < t.tileLength; i++){
-         if(i == 0 || i == (t.tileLength-1)){
-            for(int j = 0; j < t.tileWidth; j++){
-               t.localDepthBuffer[j][i] = 0;
-               t.localColorBuffer[j][i] = 0xFFFF0000;
-            }
-         }
-         t.localColorBuffer[0][i] = 0xFFFF0000;
-         t.localColorBuffer[(int)t.tileWidth-1][i] = 0xFFFF0000;
-      }
+         // for(int i = 0; i < t.tileLength; i++){
+         //    if(i == 0 || i == (t.tileLength-1)){
+         //       for(int j = 0; j < t.tileWidth; j++){
+         //          t.localDepthBuffer[j][i] = 0;
+         //          t.localColorBuffer[j][i] = 0xFFFF0000;
+         //       }
+         //    }
+         //    t.localColorBuffer[0][i] = 0xFFFF0000;
+         //    t.localColorBuffer[(int)t.tileWidth-1][i] = 0xFFFF0000;
+         // }
    }
 
 
@@ -235,18 +241,19 @@ public class WindowManager {
             }
             int xLocal = px + (int)(t.tileWidth - t.xOffset);
             int yLocal = py + (int)(t.tileLength - t.yOffset);
-
+            int pixel = (xLocal * (int)t.tileLength) + yLocal;
             if (xLocal < 0 || xLocal >= (int)t.tileWidth || yLocal < 0 || yLocal >= (int)t.tileLength) {
                return; 
             }
-            t.localDepthBuffer[xLocal][yLocal] = z;
+            t.localDepthBuffer[xLocal][yLocal] = (float)z;
             
             t.localColorBuffer[xLocal][yLocal] = e.texture.getRGB((int)texU, (int)texV);
+
          
          } else {
             int xLocal = px + (int)(t.tileWidth - t.xOffset);
             int yLocal = py + (int)(t.tileLength - t.yOffset);
-            t.localDepthBuffer[xLocal][yLocal] = z;
+            t.localDepthBuffer[xLocal][yLocal] = (float)z;
             t.localColorBuffer[xLocal][yLocal] =  (flag) ? 0xFFFF0000: 0xFF00FF;
          }
       }
@@ -255,6 +262,8 @@ public class WindowManager {
       int iStart = 0;
       int jStart = 0;
       for(Tile t : tm.tiles){
+         
+
          for(int i = 0; i < t.tileWidth; i++){
             for(int j = 0; j < t.tileLength; j++){
                colorBuffer[i+iStart][j+jStart] = t.localColorBuffer[i][j];
@@ -306,5 +315,4 @@ public class WindowManager {
          return 0;
       }
    }
-
 }

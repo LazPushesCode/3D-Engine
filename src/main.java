@@ -9,7 +9,7 @@ public class main{
         CameraManager cm = new CameraManager(wm.width, wm.length,100);
         InputManager im = new InputManager();
 
-        cm.setCameraPosition(0, 0, -5);
+        cm.setCameraPosition(0, 0, -2);
         
         wm.openWindow();
         wm.addInputListener(im);
@@ -17,59 +17,59 @@ public class main{
 
         Scene world = new Scene();
         world.addCamera(cm);
-        for(int i = -10; i < 10; i++){
-            for(int j = -10; j < 10; j++){
-                // for(int k = 0; k < 3; k++){
-                    Entity cube = new Entity();
-                    cube.cubeMesh();
-                    cube.setWorldPosition(i, j, 0);
-                    world.addEntity(cube);
-                    // cube.setTexture("C:\\Users\\lazar\\3D-Engine\\resources\\assets\\11635.png");
-                // }
-            }
-        }
+        // for(int i = -10; i < 10; i++){
+        //     for(int j = -10; j < 10; j++){
+        //         // for(int k = 0; k < 3; k++){
+        //             Entity cube = new Entity();
+        //             cube.cubeMesh();
+        //             cube.setWorldPosition(i, j, 0);
+        //             world.addEntity(cube);
+        //             // cube.setTexture("C:\\Users\\lazar\\3D-Engine\\resources\\assets\\11635.png");
+        //         // }
+        //     }
+        // }
 
-        // Entity cube = new Entity();
-        // cube.cubeMesh();
-        // cube.setWorldPosition(0, 0, 0);
-        // cube.setTexture("C:\\Users\\lazar\\3D-Engine\\resources\\assets\\11635.png");
-        // world.addEntity(cube);
+        Entity cube = new Entity();
+        cube.cubeMesh();
+        cube.setWorldPosition(0, 0, 0);
+        cube.setTexture("C:\\Users\\lazar\\3D-Engine\\resources\\assets\\11635.png");
+        world.addEntity(cube);
 
-        // Entity wall = new Entity();
-        // wall.cubeMesh();
-        // wall.translate(10.5, 0, 0).rotatex(90).scale(20, 20,-0.9);
-        // wall.setTexture("C:\\Users\\lazar\\3D-Engine\\resources\\assets\\11635.png");
-        // world.addEntity(wall);
+        Entity wall = new Entity();
+        wall.cubeMesh();
+        wall.translate(10.5, 0, 0).rotatex(90).scale(20, 20,-0.9);
+        wall.setTexture("C:\\Users\\lazar\\3D-Engine\\resources\\assets\\11635.png");
+        world.addEntity(wall);
 
-        // Entity wall2 = new Entity();
-        // wall2.cubeMesh();
-        // wall2.translate(-10.5, 0, 0).rotatex(90).scale(20, 20,-0.9);
-        // wall2.setTexture("C:\\Users\\lazar\\3D-Engine\\resources\\assets\\11635.png");
-        // world.addEntity(wall2);
+        Entity wall2 = new Entity();
+        wall2.cubeMesh();
+        wall2.translate(-10.5, 0, 0).rotatex(90).scale(20, 20,-0.9);
+        wall2.setTexture("C:\\Users\\lazar\\3D-Engine\\resources\\assets\\11635.png");
+        world.addEntity(wall2);
 
-        // Entity wall3 = new Entity();
-        // wall3.cubeMesh();
-        // wall3.translate(0, 0, 10.5).rotatex(0).scale(20, 20,-0.9);
-        // wall3.setTexture("C:\\Users\\lazar\\3D-Engine\\resources\\assets\\11635.png");
-        // world.addEntity(wall3);
+        Entity wall3 = new Entity();
+        wall3.cubeMesh();
+        wall3.translate(0, 0, 10.5).rotatex(0).scale(20, 20,-0.9);
+        wall3.setTexture("C:\\Users\\lazar\\3D-Engine\\resources\\assets\\11635.png");
+        world.addEntity(wall3);
 
-        // Entity wall4 = new Entity();
-        // wall4.cubeMesh();
-        // wall4.translate(0, 0, -10.5).rotatex(0).scale(20, 20,-0.9);
-        // wall4.setTexture("C:\\Users\\lazar\\3D-Engine\\resources\\assets\\11635.png");
-        // world.addEntity(wall4);
+        Entity wall4 = new Entity();
+        wall4.cubeMesh();
+        wall4.translate(0, 0, -10.5).rotatex(0).scale(20, 20,-0.9);
+        wall4.setTexture("C:\\Users\\lazar\\3D-Engine\\resources\\assets\\11635.png");
+        world.addEntity(wall4);
 
-        // Entity floor = new Entity();
-        // floor.cubeMesh();
-        // floor.translate(0, -10.5, 0).rotatex(90).scale(20, -0.9,20);
-        // floor.setTexture("C:\\Users\\lazar\\3D-Engine\\resources\\assets\\11635.png");
-        // world.addEntity(floor);
+        Entity floor = new Entity();
+        floor.cubeMesh();
+        floor.translate(0, -10.5, 0).rotatex(90).scale(20, -0.9,20);
+        floor.setTexture("C:\\Users\\lazar\\3D-Engine\\resources\\assets\\11635.png");
+        world.addEntity(floor);
 
-        // Entity ceiling = new Entity();
-        // ceiling.cubeMesh();
-        // ceiling.translate(0, 10.5, 0).rotatex(90).scale(20, -0.9,20);
-        // ceiling.setTexture("C:\\Users\\lazar\\3D-Engine\\resources\\assets\\11635.png");
-        // world.addEntity(ceiling);
+        Entity ceiling = new Entity();
+        ceiling.cubeMesh();
+        ceiling.translate(0, 10.5, 0).rotatex(90).scale(20, -0.9,20);
+        ceiling.setTexture("C:\\Users\\lazar\\3D-Engine\\resources\\assets\\11635.png");
+        world.addEntity(ceiling);
         
 
 
@@ -91,60 +91,91 @@ public class main{
         int frames = 0;
         long lastFpsTime = System.currentTimeMillis();
         
-        while(true){
-            try{
-                deltaTime = (currentTime - previousTime)%1000;
-                wm.clearScreen();
-                cm.pollInput(im, wm, deltaTime);
-                cm.updateCameraMatrix();
-                world.assignEntitiesToThreads();
+        long timeInput = 0;
+        long timeConv = 0;
+        long timeCull = 0;
+        long timeNdc = 0;
+        long timeAssign = 0;
+        long timeRender = 0;
+        long timeScreen = 0;
 
-                
-                world.entityConversions();
-                // world.transformEntities();
-                // world.convertToWorldThenViewSpace();
-                
-                // world.convertVerticesToWorldSpace();
-                // world.convertVerticesToViewSpace();
+while(true){
+    try{
+        deltaTime = (currentTime - previousTime)%1000;
+        wm.clearScreen();
+        
+        long start = System.nanoTime();
+        cm.pollInput(im, wm, deltaTime);
+        cm.updateCameraMatrix();
+        timeInput += (System.nanoTime() - start);
 
+        start = System.nanoTime();
+        world.assignEntitiesToThreads();
+        world.entityConversions();
+        timeConv += (System.nanoTime() - start);
 
-                TriangleManager.cullOperations(world);
+        start = System.nanoTime();
+        TriangleManager.cullOperations(world);
+        timeCull += (System.nanoTime() - start);
 
-                world.convertToNDC(wm, tm);
-                tm.assignTrianglesToTiles(world, wm);
-                    CountDownLatch latch = new CountDownLatch(tm.tiles.size());
-                    for(int i = 0; i < tm.tiles.size(); i++){
-                        final int index = i;
-                        tilePool.execute(() -> {
-                            try {
-                                wm.renderTile(tm.tiles.get(index), world, cm);
-                            } finally {
-                                latch.countDown();
-                            }
-                        });
-                    }
-                    latch.await();
-                    wm.updateScreen(tm);
-                    if(wm.errorOccured) break;
-                    Thread.sleep(1);
-                    frames++;
-                    long now = System.currentTimeMillis();
-                    if(now - lastFpsTime >= 1000){
-                        System.out.println("FPS: " + frames);
-                        frames = 0;
-                        lastFpsTime = now;
-                        // tm.displayTileIndiceData();
-                        //    world.printSceneData();
-                    }
-                    previousTime = currentTime;
-                    currentTime = (System.currentTimeMillis());
-                    world.resetSceneFrameData();
-                    tm.emptyTiles();
-                    // break;
-            } catch (Exception e) {
-                e.printStackTrace();
-                return;
-             }
+        start = System.nanoTime();
+        world.convertToNDC(wm, tm);
+        timeNdc += (System.nanoTime() - start);
+        
+        start = System.nanoTime();
+        tm.assignTrianglesToTiles(world, wm);
+        timeAssign += (System.nanoTime() - start);
+
+        start = System.nanoTime();
+        CountDownLatch latch = new CountDownLatch(tm.tileCount);
+        for(int i = 0; i < tm.tileCount; i++){
+            final int index = i;
+            tilePool.execute(() -> {
+                try {
+                    wm.renderTile(tm.tiles.get(index), world, cm);
+                } finally {
+                    latch.countDown();
+                }
+            });
         }
+        latch.await();
+        timeRender += (System.nanoTime() - start);
+
+        start = System.nanoTime();
+        wm.updateScreen(tm);
+        timeScreen += (System.nanoTime() - start);
+
+        if(wm.errorOccured) break;
+        Thread.sleep(1);
+        frames++;
+        
+        long now = System.currentTimeMillis();
+        if(now - lastFpsTime >= 1000){
+            System.out.println("=========================================");
+            System.out.println("FPS: " + frames);
+            System.out.printf("Input & Cam:   %.2f ms\n", (timeInput / (double)frames) / 1_000_000.0);
+            System.out.printf("Vertex Math:   %.2f ms\n", (timeConv / (double)frames) / 1_000_000.0);
+            System.out.printf("Culling:       %.2f ms\n", (timeCull / (double)frames) / 1_000_000.0);
+            System.out.printf("NDC Convert:   %.2f ms\n", (timeNdc / (double)frames) / 1_000_000.0);
+            System.out.printf("Assign Tiles:  %.2f ms\n", (timeAssign / (double)frames) / 1_000_000.0);
+            System.out.printf("Tile Render:   %.2f ms\n", (timeRender / (double)frames) / 1_000_000.0);
+            System.out.printf("Update Screen:   %.2f ms\n", (timeScreen / (double)frames) / 1_000_000.0);
+            System.out.println("=========================================");
+            
+            // Reset trackers for the next second
+            frames = 0;
+            lastFpsTime = now;
+            timeInput = timeConv = timeCull = timeNdc = timeAssign = timeRender = timeScreen = 0;
+        }
+        
+        previousTime = currentTime;
+        currentTime = (System.currentTimeMillis());
+        world.resetSceneFrameData();
+        tm.emptyTiles();
+    } catch (Exception e) {
+        e.printStackTrace();
+        return;
+    }
+}
     }
 }
