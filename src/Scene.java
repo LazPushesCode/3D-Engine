@@ -83,7 +83,6 @@ public class Scene {
          currentIndicesSize =  currentIndicesIndex;
     }
     void assignEntitiesToThreads(){
-        // int batchSize = (int) Math.ceil((double) objects / threads);
         int batch = (int) Math.ceil((double) entityCount / threadCount);
         int currOffset = entityCount;
         for(int i = threadCount-1; i >= 0; i--){

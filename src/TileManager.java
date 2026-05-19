@@ -47,15 +47,15 @@ public class TileManager {
             int minRow = Math.max(0,(int)(yMin/this.tileLength));
             int maxRow = Math.min(numRows - 1, (int)(yMax/this.tileLength));
             for(int r = minRow; r <= maxRow; r++){
-                for(int c = minCol; c <= maxCol; c++){
-                    int t = (numCols * r) + c;
+                // for(int c = minCol; c <= maxCol; c++){
+                    int t = (numCols * r);
                     int triangleIndex = tiles.get(t).indicesCount;
                     tiles.get(t).visibleIndices[triangleIndex] = s.processedIndices[i];
                     tiles.get(t).visibleIndices[triangleIndex+1] = s.processedIndices[i+1];
                     tiles.get(t).visibleIndices[triangleIndex+2] = s.processedIndices[i+2];
                     tiles.get(t).visibleIndices[triangleIndex+3] = s.processedIndices[i+3];
                     tiles.get(t).indicesCount += 4;
-                }
+                // }
             }
         }
     }
