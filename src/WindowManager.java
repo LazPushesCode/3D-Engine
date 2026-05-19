@@ -7,9 +7,9 @@ public class WindowManager {
     int length;
 
     //keep
+    int[] windowColorBuffer;
 
     //remove
-    int [][] colorBuffer;
 
     boolean displayTilesOnScreen;
     boolean errorOccured;
@@ -21,7 +21,7 @@ public class WindowManager {
         panel.setFocusable(true);
         panel.requestFocusInWindow();
 
-        colorBuffer = new int[width][length];
+        windowColorBuffer = new int[width * length];
 
         displayTilesOnScreen = false;
         errorOccured = false;
@@ -35,13 +35,8 @@ public class WindowManager {
     }
     void updateScreen(TileManager tm){
       combineColorBuffers(tm);
-        for(int i = 0; i < width; i++){
-            for(int j = 0; j < length; j++){
-                if(colorBuffer[i][j] != 0){
-                    panel.setPixel(i,j, colorBuffer[i][j]);
-                }
-            } 
-        }
+        System.arraycopy(windowColorBuffer, 0, panel.pixels, 0, windowColorBuffer.length);
+
         populateBuffers();
         panel.repaint();
     }
@@ -54,17 +49,12 @@ public class WindowManager {
       return true;
     }
     void populateBuffers(){
-      for(int i = 0; i < width; i++){
-         for(int j = 0; j < length; j++){
-             colorBuffer[i][j] = 0;
-         }
-      }
+      java.util.Arrays.fill(windowColorBuffer, 0);
     }
     void clearScreen(){
         panel.clear(0xFF000000); // opaque black
     }
     void renderTile(Tile t, Scene s, CameraManager c){
-      //depth test on indice points
       // System.out.println("tile visible triangles: " + Arrays.toString(t.visibleIndices));
       for (int i = 0; i < t.indicesCount; i++) {
          int v = t.visibleIndices[i];
@@ -72,9 +62,9 @@ public class WindowManager {
          int y = (int) s.globalVertices[v+1];
          double z = s.globalVertices[v+2];
          if(localDepthTest(t, x, y, z)){
-            int xLocal = x + (int)(t.tileWidth - t.xOffset);
+            int xLocal = x;
             int yLocal = y + (int)(t.tileLength - t.yOffset);
-            t.localDepthBuffer[xLocal][yLocal] = (float)z;
+            t.tileDepthBuffer[yLocal * (int)t.tileWidth + xLocal] = (float)z;
          }
       }
       for(int i = 0; i < t.indicesCount; i+=4){
@@ -227,6 +217,11 @@ public class WindowManager {
 
       Entity e = s.entities.get(entityID);
 
+      int tileW = (int) t.tileWidth;
+      int xLocal = px;
+      int yLocal = py + (int)(t.tileLength - t.yOffset);
+      int pixel = (yLocal * tileW) + xLocal;
+
       if(localDepthTest(t,px, py, z)){
          if(e.texture != null){
             int textureWidth = e.texture.getWidth();
@@ -239,48 +234,36 @@ public class WindowManager {
             if(u < 0 || v < 0) {
                return;
             }
-            int xLocal = px + (int)(t.tileWidth - t.xOffset);
-            int yLocal = py + (int)(t.tileLength - t.yOffset);
-            int pixel = (xLocal * (int)t.tileLength) + yLocal;
             if (xLocal < 0 || xLocal >= (int)t.tileWidth || yLocal < 0 || yLocal >= (int)t.tileLength) {
                return; 
             }
-            t.localDepthBuffer[xLocal][yLocal] = (float)z;
+
+            t.tileDepthBuffer[pixel] = (float)z;
             
-            t.localColorBuffer[xLocal][yLocal] = e.texture.getRGB((int)texU, (int)texV);
+            t.tileColorBuffer[pixel] = e.texture.getRGB((int)texU, (int)texV);
 
          
          } else {
-            int xLocal = px + (int)(t.tileWidth - t.xOffset);
-            int yLocal = py + (int)(t.tileLength - t.yOffset);
-            t.localDepthBuffer[xLocal][yLocal] = (float)z;
-            t.localColorBuffer[xLocal][yLocal] =  (flag) ? 0xFFFF0000: 0xFF00FF;
+            t.tileDepthBuffer[pixel] = (float)z;
+
+            t.tileColorBuffer[pixel] = (flag) ? 0xFFFF0000: 0xFF00FF;
          }
       }
    }
    void combineColorBuffers(TileManager tm){
-      int iStart = 0;
-      int jStart = 0;
       for(Tile t : tm.tiles){
-         
-
-         for(int i = 0; i < t.tileWidth; i++){
-            for(int j = 0; j < t.tileLength; j++){
-               colorBuffer[i+iStart][j+jStart] = t.localColorBuffer[i][j];
-            }
-         }
-         iStart += t.tileWidth;
-         if(iStart >= width){
-            iStart = 0;
-            jStart += t.tileLength;
-         }
+         int srcPos = 0;
+         int length = t.tileColorBuffer.length;
+         int destPos = (int)(t.tileWidth * (t.yOffset - t.tileLength));
+         System.arraycopy(t.tileColorBuffer,srcPos, windowColorBuffer, destPos, length);
       }
    }
    boolean localDepthTest(Tile t, int x, int y, double z){
-      int xLocal = x + (int)(t.tileWidth - t.xOffset);
+      int xLocal = x;
       int yLocal = y + (int)(t.tileLength - t.yOffset);
       if(!inTileBounds(t, xLocal, yLocal))return false;
-      return (z >= t.localDepthBuffer[xLocal][yLocal]);
+      return(z >= t.tileDepthBuffer[yLocal * (int)t.tileWidth + xLocal]);
+      // return (z >= t.localDepthBuffer[xLocal][yLocal]);
    }
     int[] interpolate(int x1, int y1, int x2, int y2) {
         if (y1 == y2) return new int[0];

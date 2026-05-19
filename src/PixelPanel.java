@@ -6,7 +6,7 @@ import javax.swing.*;
 
 public class PixelPanel extends JPanel {
     private final BufferedImage image;
-    private final int[] pixels;
+     final int[] pixels;
     private final int width;
 
     public PixelPanel(int width, int length){

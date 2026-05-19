@@ -4,10 +4,9 @@ public class Tile {
     int[] visibleIndices;
     int indicesCount;
 
+    int[] tileColorBuffer;
+    float[] tileDepthBuffer;
 
-    //remove
-    int [][] localColorBuffer;
-    float [][] localDepthBuffer;
 
     Tile(double x, double y, double w, double l, int count){
         xOffset = x;
@@ -17,21 +16,19 @@ public class Tile {
         indicesCount = 0;
         visibleIndices = new int[count];
 
-        localColorBuffer = new int[(int)tileWidth][(int)tileLength];
-        localDepthBuffer = new float[(int)tileWidth][(int)tileLength];
 
-        for (int i = 0; i < (int)tileWidth; i++) {
-            java.util.Arrays.fill(localColorBuffer[i], 0); 
-            java.util.Arrays.fill(localDepthBuffer[i], 0); 
-        }
+        tileColorBuffer = new int[(int)tileWidth * (int)tileLength];
+        tileDepthBuffer = new float[(int)tileWidth * (int)tileLength];
+
+        java.util.Arrays.fill(tileColorBuffer, 0);
+        java.util.Arrays.fill(tileDepthBuffer, 0);
     }
     void emptyTileData(){
         indicesCount = 0;
 
-        for (int i = 0; i < (int)tileWidth; i++) {
-            java.util.Arrays.fill(localColorBuffer[i], 0); 
-            java.util.Arrays.fill(localDepthBuffer[i], 0); 
-        }
+        java.util.Arrays.fill(tileColorBuffer, 0);
+        java.util.Arrays.fill(tileDepthBuffer, 0);
+
     }
     void displayData(){
         System.out.println(Arrays.toString(visibleIndices));

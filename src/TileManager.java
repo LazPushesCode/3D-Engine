@@ -7,24 +7,21 @@ public class TileManager {
     TileManager(){
         tiles = new ArrayList();
     }
-    void allocateTiles(int rows, int cols, WindowManager wm, Scene s){
+    void createTiles(int cores, WindowManager wm, Scene s){
         if(!tiles.isEmpty()){
             tiles.clear();
         }
-        numRows = rows;
-        numCols = cols;
-        tileWidth = wm.width/4;
-        tileLength = wm.length/2;
+        tileCount = cores;
+        tileWidth = wm.width;
+        tileLength = wm.length/cores;
+        numRows = cores;
+        numCols = 1;
         double xOffset = tileWidth;
         double yOffset = tileLength;
-        tileCount = 8;
+        System.out.println("cores: " + cores +" width: " + tileWidth + " length: " + tileLength);
         for(int i = 0; i < tileCount; i++){
             tiles.add(new Tile(xOffset, yOffset, tileWidth, tileLength, s.entityCount*40*2));
-            xOffset += tileWidth;
-            if(xOffset > wm.width){
-                xOffset = tileWidth;
-                yOffset += tileLength;
-            }
+            yOffset += tileLength;
         }
     }
     void assignTrianglesToTiles(Scene s, WindowManager wm){
@@ -60,6 +57,11 @@ public class TileManager {
                     tiles.get(t).indicesCount += 4;
                 }
             }
+        }
+    }
+    void printTileOffsets(){
+        for(Tile t : tiles){
+            System.out.println(t.xOffset + " " + t.yOffset);
         }
     }
     void displayTileIndiceData(){
