@@ -1,11 +1,15 @@
 import java.awt.image.BufferedImage;
-import java.io.File;
-import javax.imageio.ImageIO;
 
 public class Entity {
     //keep
     double[] vertices;
     int[] indices;
+
+    int[] textureBuffer;
+    int textureHeight;
+    int textureWidth;
+    boolean hasTexture;
+
     BufferedImage texture;
     Matrix transformation;
     double x, y, z;
@@ -61,9 +65,20 @@ public class Entity {
         }
         return worldVectors;
     }
-    void setTexture(String source){
+    void applyTexture(Texture texture){
+        textureHeight = texture.height;
+        textureWidth = texture.width;
+        // textureBuffer = new int[textureHeight * textureWidth];
+        textureBuffer = texture.buffer;
+        hasTexture = true;
+    }
+    void setTexture(BufferedImage t){
         try{
-            texture = ImageIO.read(new File(source));
+            texture = t;
+            textureHeight = texture.getHeight();
+            textureWidth = texture.getWidth();
+            textureBuffer = new int[textureHeight * textureWidth];
+            texture.getRGB(0, 0, textureWidth, textureHeight, textureBuffer, 0, textureWidth);
         } catch(Exception e){
             e.printStackTrace();
         }
@@ -139,6 +154,7 @@ public class Entity {
         initializeArrays(cubeVertices, cubeIndices);
         initializeVariables();
         transformation = Matrix.Identity();
+        hasTexture = false;
     }
     void triangleMesh(){
         double [] cubeVertices = {

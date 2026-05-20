@@ -17,14 +17,25 @@ public class main{
 
         Scene world = new Scene();
         world.addCamera(cm);
+
+        // BufferedImage texture = null;
+        // try{
+        //     texture = ImageIO.read(new File("C:\\Users\\lazar\\3D-Engine\\resources\\assets\\11635.png"));
+        //     int texHeight = texture.getHeight();
+        //     int texWidth = texture.getWidth();
+        //     int[] texBuffer = new int[texHeight * texWidth];
+        //     texture.getRGB(0,0,texWidth,texHeight, texBuffer, 0, texWidth);
+        // } catch (Exception e){
+        // }
+        Texture grassblock = new Texture("C:\\Users\\lazar\\3D-Engine\\resources\\assets\\11635.png");
         // for(int i = -30; i < 30; i++){
         //     for(int j = -30; j < 30; j++){
         //         // for(int k = 0; k < 3; k++){
         //             Entity cube = new Entity();
         //             cube.cubeMesh();
         //             cube.setWorldPosition(i, j, 0);
+        //             cube.applyTexture(grassblock);
         //             world.addEntity(cube);
-        //             cube.setTexture("C:\\Users\\lazar\\3D-Engine\\resources\\assets\\11635.png");
         //         // }
         //     }
         // }
@@ -32,43 +43,43 @@ public class main{
         Entity cube = new Entity();
         cube.cubeMesh();
         cube.setWorldPosition(0, 0, 0);
-        cube.setTexture("C:\\Users\\lazar\\3D-Engine\\resources\\assets\\11635.png");
+        cube.applyTexture(grassblock);
         world.addEntity(cube);
 
         Entity wall = new Entity();
         wall.cubeMesh();
         wall.translate(10.5, 0, 0).rotatex(90).scale(20, 20,-0.9);
-        wall.setTexture("C:\\Users\\lazar\\3D-Engine\\resources\\assets\\11635.png");
+        wall.applyTexture(grassblock);
         world.addEntity(wall);
 
         Entity wall2 = new Entity();
         wall2.cubeMesh();
         wall2.translate(-10.5, 0, 0).rotatex(90).scale(20, 20,-0.9);
-        wall2.setTexture("C:\\Users\\lazar\\3D-Engine\\resources\\assets\\11635.png");
+        wall2.applyTexture(grassblock);
         world.addEntity(wall2);
 
         Entity wall3 = new Entity();
         wall3.cubeMesh();
         wall3.translate(0, 0, 10.5).rotatex(0).scale(20, 20,-0.9);
-        wall3.setTexture("C:\\Users\\lazar\\3D-Engine\\resources\\assets\\11635.png");
+        wall3.applyTexture(grassblock);
         world.addEntity(wall3);
 
         Entity wall4 = new Entity();
         wall4.cubeMesh();
         wall4.translate(0, 0, -10.5).rotatex(0).scale(20, 20,-0.9);
-        wall4.setTexture("C:\\Users\\lazar\\3D-Engine\\resources\\assets\\11635.png");
+        wall4.applyTexture(grassblock);
         world.addEntity(wall4);
 
         Entity floor = new Entity();
         floor.cubeMesh();
         floor.translate(0, -10.5, 0).rotatex(90).scale(20, -0.9,20);
-        floor.setTexture("C:\\Users\\lazar\\3D-Engine\\resources\\assets\\11635.png");
+        floor.applyTexture(grassblock);
         world.addEntity(floor);
 
         Entity ceiling = new Entity();
         ceiling.cubeMesh();
         ceiling.translate(0, 10.5, 0).rotatex(90).scale(20, -0.9,20);
-        ceiling.setTexture("C:\\Users\\lazar\\3D-Engine\\resources\\assets\\11635.png");
+        ceiling.applyTexture(grassblock);
         world.addEntity(ceiling);
         
 
@@ -102,7 +113,6 @@ public class main{
 while(true){
     try{
         deltaTime = (currentTime - previousTime)%1000;
-        wm.clearScreen();
         
         long start = System.nanoTime();
         cm.pollInput(im, wm, deltaTime);

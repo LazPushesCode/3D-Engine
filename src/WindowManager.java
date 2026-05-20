@@ -1,4 +1,3 @@
-import java.awt.image.BufferedImage;
 import javax.swing.*;
 
 public class WindowManager {
@@ -7,13 +6,11 @@ public class WindowManager {
     int width;
     int length;
 
-    //keep
     int[] windowColorBuffer;
-
-    //remove
 
     boolean displayTilesOnScreen;
     boolean errorOccured;
+
     WindowManager(int windowWidth, int windowHeight){
         frame.setSize(windowWidth, windowHeight);
         width = windowWidth;
@@ -36,9 +33,9 @@ public class WindowManager {
     }
     void updateScreen(TileManager tm){
       combineColorBuffers(tm);
-        System.arraycopy(windowColorBuffer, 0, panel.pixels, 0, windowColorBuffer.length);
-        populateBuffers();
-        panel.repaint();
+      System.arraycopy(windowColorBuffer, 0, panel.pixels, 0, windowColorBuffer.length);
+      populateBuffers();
+      panel.repaint();
     }
     void addInputListener(InputManager input){
       panel.addKeyListener(input);
@@ -83,7 +80,7 @@ public class WindowManager {
          double v2 = s.globalVertices[pos2+5];
 
          Entity e = s.entities.get(entityID);
-         BufferedImage texture = e.texture;
+         int[] textureBuffer = e.textureBuffer;
 
          if (y0 > y1) { 
                double tx=x0, ty=y0, tz=z0, tw=w0, tu=u0, tv=v0; x0=x1; y0=y1; z0=z1; w0=w1; u0=u1; v0=v1; x1=tx; y1=ty; z1=tz; w1=tw; u1=tu; v1=tv;
@@ -158,7 +155,7 @@ public class WindowManager {
                   v /= wInterpolated;
                   z /= wInterpolated;
                   try {
-                     sampleTexture(s, t, px, py, u, v, z, texture);
+                     sampleTexture(s, t, px, py, u, v, z, textureBuffer, e, ((j==xLeftValues[k] || j == xRightValues[k]-1)));
                   } catch (Exception b) {
                      b.printStackTrace();
                   }
@@ -172,15 +169,15 @@ public class WindowManager {
       }
     }
    //main bottleneck
-   void sampleTexture(Scene s, Tile t, int px, int py, double u, double v, double z, BufferedImage texture){
+   void sampleTexture(Scene s, Tile t, int px, int py, double u, double v, double z, int[]textureBuffer, Entity e, boolean flag){
       int tileW = (int) t.tileWidth;
       int xLocal = px;
       int yLocal = py + (int)(t.tileLength - t.yOffset);
       int pixel = (yLocal * tileW) + xLocal;
       if(localDepthTest(t,px, py, z)){
-         if(texture != null){
-            int textureWidth = texture.getWidth();
-            int textureHeight = texture.getHeight();
+         if(e.hasTexture){
+            int textureWidth = e.textureWidth;
+            int textureHeight = e.textureHeight;
             u *= (int)textureWidth;
             v *= (int)textureHeight;
             int texU = Math.max(0, Math.min((int)u, textureWidth - 1));
@@ -193,11 +190,12 @@ public class WindowManager {
                return; 
             }
             t.tileDepthBuffer[pixel] = (float)z;
-            t.tileColorBuffer[pixel] = texture.getRGB((int)texU, (int)texV);
+            // t.tileColorBuffer[pixel] = texture.getRGB((int)texU, (int)texV);
+            t.tileColorBuffer[pixel] = textureBuffer[(texV * textureWidth) + texU] ;
 
          } else {
             t.tileDepthBuffer[pixel] = (float)z;
-            t.tileColorBuffer[pixel] =  0xFF00FF;
+            t.tileColorBuffer[pixel] =  (flag) ? 0xFFFF0000 : 0xFF00FF;
          }
       }
    }
