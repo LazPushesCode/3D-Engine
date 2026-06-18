@@ -27,6 +27,10 @@ public class TriangleManager {
         processValidIndices(s, validIndices, currentIndex);
     }
     static void processValidIndices(Scene s, int[] validIndices, int validIndicesSize){
+        int x_offset = s.X_OFFSET;
+        int y_offset = s.Y_OFFSET;
+        int z_offset = s.Z_OFFSET;
+        int w_offset = s.W_OFFSET;
         for(int i = 0; i < validIndicesSize; i+=4){
             boolean discard = false;
             boolean clip = false;
@@ -35,9 +39,9 @@ public class TriangleManager {
                 for(int j = i; j < (i+4); j++){
                     int index = validIndices[j]*Scene.STRIDE;
                     double xm = s.globalVertices[index];
-                    double ym = s.globalVertices[index+1];
-                    double zm = s.globalVertices[index+2];
-                    double wm = s.globalVertices[index+3];
+                    double ym = s.globalVertices[index+y_offset];
+                    double zm = s.globalVertices[index+z_offset];
+                    double wm = s.globalVertices[index+w_offset];
                     switch(p){
                         case 0: // outside left plane
                             if(xm < -wm) {
@@ -75,7 +79,7 @@ public class TriangleManager {
                     discard = true;
                     break;
                 }
-                if(pointsOutsidePlane > 0){
+                if(pointsOutsidePlane >= 0){
                     clip = true;
                 }
             }
@@ -91,26 +95,28 @@ public class TriangleManager {
         s.perspectiveDivideVectors();
     }
     static double determineDirection(double[] vectors, int p0, int p1, int p2){
+        int y_offset = Scene.Y_OFFSET;
+        int z_offset = Scene.Z_OFFSET;
         int stride = Scene.STRIDE;
         p0 *= stride;
         p1 *= stride;
         p2 *= stride;
         
         double e1x = vectors[p1]-vectors[p0];
-        double e1y = vectors[p1+1] - vectors[p0+1];
-        double e1z = vectors[p1+2] - vectors[p0+2];
+        double e1y = vectors[p1+y_offset] - vectors[p0+y_offset];
+        double e1z = vectors[p1+z_offset] - vectors[p0+z_offset];
 
         double e2x = vectors[p2] - vectors[p0];
-        double e2y = vectors[p2+1] - vectors[p0+1];
-        double e2z = vectors[p2+2] - vectors[p0+2];
+        double e2y = vectors[p2+y_offset] - vectors[p0+y_offset];
+        double e2z = vectors[p2+z_offset] - vectors[p0+z_offset];
 
         double nx = e1y * e2z - e1z * e2y;
         double ny = e1z * e2x - e1x * e2z;
         double nz = e1x * e2y - e1y * e2x; 
 
         double vx = -vectors[p0];
-        double vy = -vectors[p0 + 1];
-        double vz = -vectors[p0 + 2];
+        double vy = -vectors[p0 + y_offset];
+        double vz = -vectors[p0 + z_offset];
 
         return (nx * vx) + (ny * vy) + (nz * vz);
     }
@@ -181,35 +187,46 @@ public class TriangleManager {
         }
     }
     static int intersectAndStore(Scene s, int p1, int p2, int plane){
-        int scene = Scene.STRIDE;
-        p1 *= scene;
-        p2 *= scene;
+        int y_offset = Scene.Y_OFFSET;
+        int z_offset = Scene.Z_OFFSET;
+        int w_offset = Scene.W_OFFSET;
+        int u_offset = Scene.U_OFFSET;
+        int v_offset = Scene.V_OFFSET;
+
+        int wx_offset = Scene.WX_OFFSET;
+        int wy_offset = Scene.WY_OFFSET;
+        int wz_offset = Scene.WZ_OFFSET;
+        int ww_offset = Scene.WW_OFFSET;
+
+        int stride = Scene.STRIDE;
+        p1 *= stride;
+        p2 *= stride;
         double fp1= 0;
         double fp2 = 0;
         switch (plane) {
             case 0:
-                fp1 = s.globalVertices[p1+3] + s.globalVertices[p1]; 
-                fp2 = s.globalVertices[p2+3] + s.globalVertices[p2];
+                fp1 = s.globalVertices[p1+w_offset] + s.globalVertices[p1]; 
+                fp2 = s.globalVertices[p2+w_offset] + s.globalVertices[p2];
                 break;
             case 1:
-                fp1 = s.globalVertices[p1 + 3] - s.globalVertices[p1];
-                fp2 = s.globalVertices[p2 + 3] - s.globalVertices[p2];
+                fp1 = s.globalVertices[p1 + w_offset] - s.globalVertices[p1];
+                fp2 = s.globalVertices[p2 + w_offset] - s.globalVertices[p2];
                 break;
             case 2:
-                fp1 = s.globalVertices[p1 + 3] + s.globalVertices[p1 + 1];
-                fp2 = s.globalVertices[p2 + 3] + s.globalVertices[p2 + 1];
+                fp1 = s.globalVertices[p1 + w_offset] + s.globalVertices[p1 + y_offset];
+                fp2 = s.globalVertices[p2 + w_offset] + s.globalVertices[p2 + y_offset];
                 break;
             case 3:
-                fp1 = s.globalVertices[p1 + 3] - s.globalVertices[p1 + 1]; 
-                fp2 = s.globalVertices[p2 + 3] - s.globalVertices[p2 + 1];
+                fp1 = s.globalVertices[p1 + w_offset] - s.globalVertices[p1 + y_offset]; 
+                fp2 = s.globalVertices[p2 + w_offset] - s.globalVertices[p2 + y_offset];
                 break;
             case 4:
-                fp1 = s.globalVertices[p1 + 3] + s.globalVertices[p1 + 2]; 
-                fp2 = s.globalVertices[p2 + 3] + s.globalVertices[p2 + 2];
+                fp1 = s.globalVertices[p1 + w_offset] + s.globalVertices[p1 + z_offset]; 
+                fp2 = s.globalVertices[p2 + w_offset] + s.globalVertices[p2 + z_offset];
                 break;
             case 5:
-                fp1 = s.globalVertices[p1 + 3] - s.globalVertices[p1 + 2]; 
-                fp2 = s.globalVertices[p2 + 3] - s.globalVertices[p2 + 2];
+                fp1 = s.globalVertices[p1 + w_offset] - s.globalVertices[p1 + z_offset]; 
+                fp2 = s.globalVertices[p2 + w_offset] - s.globalVertices[p2 + z_offset];
                 break;
         }
         double t = fp1 / (fp1 - fp2);
@@ -217,15 +234,18 @@ public class TriangleManager {
         for(int i = 0; i < 4; i++){
             s.globalVertices[newIndice + i] = s.globalVertices[p1+i] + t*(s.globalVertices[p2+i] - s.globalVertices[p1+i]);
         }
-        double u1 = s.globalVertices[p1+4];
-        double v1 = s.globalVertices[p1+5];
+        double u1 = s.globalVertices[p1+u_offset];
+        double v1 = s.globalVertices[p1+v_offset];
 
-        double u2 = s.globalVertices[p2+4];
-        double v2 = s.globalVertices[p2+5];
+        double u2 = s.globalVertices[p2+u_offset];
+        double v2 = s.globalVertices[p2+v_offset];
 
-        s.globalVertices[newIndice+4] = u1 + t*(u2 - u1);
-        s.globalVertices[newIndice+5] = v1 + t*(v2 - v1);
-        s.currentVerticesSize += 6;
-        return (newIndice/scene);
+        s.globalVertices[newIndice+u_offset] = u1 + t*(u2 - u1);
+        s.globalVertices[newIndice+v_offset] = v1 + t*(v2 - v1);
+        for(int i = 6; i < stride; i++){
+            s.globalVertices[newIndice + i] = s.globalVertices[p1+i] + t*(s.globalVertices[p2+i] - s.globalVertices[p1+i]);
+        }
+        s.currentVerticesSize += Scene.STRIDE;
+        return (newIndice/stride);
     }
 }

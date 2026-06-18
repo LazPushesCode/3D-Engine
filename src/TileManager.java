@@ -25,6 +25,7 @@ public class TileManager {
         }
     }
     void assignTrianglesToTiles(Scene s, WindowManager wm){
+        int y_offset = Scene.Y_OFFSET;
         for(int i = 0; i < s.processedIndicesSize; i+=4){
             double xMin = wm.width;
             double xMax = 0;
@@ -36,7 +37,7 @@ public class TileManager {
             for(int j = i; j < (i+4); j++){
                 v = s.processedIndices[j];
                 x = s.globalVertices[v];
-                y = s.globalVertices[v+1];
+                y = s.globalVertices[v+y_offset];
                 if(x > xMax) xMax = x;
                 if(x < xMin) xMin = x;
                 if(y > yMax) yMax = y;

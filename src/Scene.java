@@ -1,3 +1,4 @@
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
@@ -7,13 +8,33 @@ public class Scene {
     HashMap<Integer, Entity> entities;
     HashMap<Integer, CameraManager> cameras;
 
-    static final int STRIDE = 6;
+    static final int STRIDE = 13;
+
+    static final int X_OFFSET = 0;
+    static final int Y_OFFSET = 1;
+    static final int Z_OFFSET = 2;
+    static final int W_OFFSET = 3;
+    static final int U_OFFSET = 4;
+    static final int V_OFFSET = 5;
+    static final int WX_OFFSET = 6;
+    static final int WY_OFFSET = 7;
+    static final int WZ_OFFSET = 8;
+    static final int WW_OFFSET = 9;
+    static final int NX_OFFSET = 10;
+    static final int NY_OFFSET = 11;
+    static final int NZ_OFFSET = 12;
+
     static final int PROCESSED_STRIDE = 3;
 
     int entityCount;
     int cameraCount;
 
     int cameraFocused;
+
+    double xLight;
+    double yLight;
+    double zLight;
+    double ambience;
 
     double[] globalVertices;
     int[] globalIndices;
@@ -42,6 +63,11 @@ public class Scene {
         threadCount = Runtime.getRuntime().availableProcessors();
         threadEntityOffsets = new int[threadCount];
         entityPool = Executors.newFixedThreadPool(threadCount);
+
+        xLight = 0;
+        yLight = 0;
+        zLight = 0;
+        ambience = 0;
     }
     void addEntity(Entity et){
         entities.put(entityCount, et);
@@ -49,40 +75,42 @@ public class Scene {
         entityCount++;
     }
     void bindVertices(){
-        initialVerticesSize = entities.size() * 300;
+        initialVerticesSize = entities.size() * 1000;
         globalVertices = new double[initialVerticesSize];
         initialIndicesSize = entities.size() * 60;
         globalIndices = new int[initialIndicesSize];
         processedIndices = new int[initialIndicesSize*2];
     }
     void resetSceneFrameData(){
-        // currentIndicesSize = 0;
         processedIndicesSize = 0;
         currentVerticesSize = 0;
     }
     void initializeGlobalIndices(){
-        int currentIndicesIndex = 0;
-        int currentVerticeLengthSnapshot = 0;
-         for(Map.Entry<Integer, Entity> entry : entities.entrySet()){
-            int ID = entry.getKey();
-            Entity e = entities.get(ID);
-            int offset = currentVerticeLengthSnapshot / STRIDE;
-            e.globalVerticeOffset = offset;
-            int indicesLength = e.indices.length;
-            int index = currentIndicesIndex;
-            for(int i = 0; i < indicesLength; i+=3){
-                globalIndices[index] = e.indices[i] + offset;
-                globalIndices[index+1] = e.indices[i+1] + offset;
-                globalIndices[index+2] = e.indices[i+2] + offset;
-                globalIndices[index+3] = ID;
-                index += 4;
-            }
-            currentVerticeLengthSnapshot += e.vertices.length;
-            currentIndicesIndex = index;
-         }
-         currentIndicesSize =  currentIndicesIndex;
+    int currentIndicesIndex = 0;
+    int vertexOffsetAccumulator = 0;
+    
+    for(Map.Entry<Integer, Entity> entry : entities.entrySet()){
+        int ID = entry.getKey();
+        Entity e = entry.getValue();
+        
+        e.globalVerticeOffset = vertexOffsetAccumulator;
+        
+        int indicesLength = e.indices.length;
+        int index = currentIndicesIndex;
+        for(int i = 0; i < indicesLength; i+=3){
+            globalIndices[index]   = e.indices[i] + vertexOffsetAccumulator;
+            globalIndices[index+1] = e.indices[i+1] + vertexOffsetAccumulator;
+            globalIndices[index+2] = e.indices[i+2] + vertexOffsetAccumulator;
+            globalIndices[index+3] = ID;
+            index += 4;
+        }
+        vertexOffsetAccumulator += e.vertices.length / Entity.LOCAL_MESH_STRIDE;
+        
+        currentIndicesIndex = index;
     }
-    void assignEntitiesToThreads(){
+    currentIndicesSize = currentIndicesIndex;
+}
+void assignEntitiesToThreads(){
         int batch = (int) Math.ceil((double) entityCount / threadCount);
         int currOffset = entityCount;
         for(int i = threadCount-1; i >= 0; i--){
@@ -94,7 +122,7 @@ public class Scene {
     void entityConversions(){
         currentVerticesSize = 0;
         for(Entity e : entities.values()){
-            currentVerticesSize += e.vertices.length;
+            currentVerticesSize += (e.vertices.length/Entity.LOCAL_MESH_STRIDE)*STRIDE;
         }
         CountDownLatch latch = new CountDownLatch(threadCount);
         CameraManager cm = cameras.get(cameraFocused);
@@ -122,103 +150,62 @@ public class Scene {
     void transformEntity(int id, CameraManager cm){
         Entity e = entities.get(id);
         e.applyTransformationValues();
-        Matrix m = cm.combinedMatrix.multiply(e.transformation);
-            double[] data = m.data;
+
+            Matrix t = e.transformation;
+            Matrix cameraMatrix = cm.combinedMatrix;
+            double[] tData = t.data;
+            double[] cData = cameraMatrix.data;
             double[] localMesh = e.vertices;
             int start = e.globalVerticeOffset * STRIDE;
-            int end = start + localMesh.length;
+            int end = start + (localMesh.length/Entity.LOCAL_MESH_STRIDE)*STRIDE;
             int index = 0;
             for(int v = start; v < end; v+= STRIDE){
                 double x = localMesh[index];
-                double y = localMesh[index+1];
-                double z = localMesh[index+2];
-                double w = localMesh[index+3];
-                globalVertices[v]   = data[0]*x  + data[1]*y  + data[2]*z  + data[3]*w;
-                globalVertices[v+1] = data[4]*x  + data[5]*y  + data[6]*z  + data[7]*w;
-                globalVertices[v+2] = data[8]*x  + data[9]*y  + data[10]*z + data[11]*w;
-                globalVertices[v+3] = data[12]*x + data[13]*y + data[14]*z + data[15]*w;
+                double y = localMesh[index+Y_OFFSET];
+                double z = localMesh[index+Z_OFFSET];
+                double w = localMesh[index+W_OFFSET];
 
-                globalVertices[v+4] = localMesh[index+4];
-                globalVertices[v+5] = localMesh[index+5];
-                index += STRIDE;
-            }
-    }
-    void transformEntities(){
-        for(Entity e : entities.values()){
-            e.applyTransformationValues();
-        }
-    }
-    void convertToWorldThenViewSpace(){
-        CameraManager cm = cameras.get(cameraFocused);
-        int currentVerticesIndex = 0;
-        for(Entity e : entities.values()){
-            Matrix m = cm.viewMatrix.multiply(e.transformation);
-            double[] data = m.data;
-            double[] localMesh = e.vertices;
-            int start = e.globalVerticeOffset * STRIDE;
-            int end = start + localMesh.length;
-            int index = 0;
-            for(int v = start; v < end; v+= STRIDE){
-                double x = localMesh[index];
-                double y = localMesh[index+1];
-                double z = localMesh[index+2];
-                double w = localMesh[index+3];
-                globalVertices[v]   = data[0]*x  + data[1]*y  + data[2]*z  + data[3]*w;
-                globalVertices[v+1] = data[4]*x  + data[5]*y  + data[6]*z  + data[7]*w;
-                globalVertices[v+2] = data[8]*x  + data[9]*y  + data[10]*z + data[11]*w;
-                globalVertices[v+3] = data[12]*x + data[13]*y + data[14]*z + data[15]*w;
+                double nx = localMesh[index+6];
+                double ny = localMesh[index+7];
+                double nz = localMesh[index+8];
 
-                globalVertices[v+4] = localMesh[index+4];
-                globalVertices[v+5] = localMesh[index+5];
-                index += STRIDE;
+                double wxNorm = tData[0]*nx + tData[1]*ny + tData[2]*nz;
+                double wyNorm = tData[4]*nx + tData[5]*ny + tData[6]*nz;
+                double wzNorm = tData[8]*nx + tData[9]*ny + tData[10]*nz;
+
+                double wx = tData[0]*x  + tData[1]*y  + tData[2]*z  + tData[3]*w;
+                double wy = tData[4]*x  + tData[5]*y  + tData[6]*z  + tData[7]*w;
+                double wz = tData[8]*x  + tData[9]*y  + tData[10]*z + tData[11]*w;
+                double ww = tData[12]*x + tData[13]*y + tData[14]*z + tData[15]*w;
+
+                globalVertices[v]   = cData[0]*wx  + cData[1]*wy  + cData[2]*wz  + cData[3]*ww;
+                globalVertices[v+Y_OFFSET] = cData[4]*wx  + cData[5]*wy  + cData[6]*wz  + cData[7]*ww;
+                globalVertices[v+Z_OFFSET] = cData[8]*wx  + cData[9]*wy  + cData[10]*wz + cData[11]*ww;
+                globalVertices[v+W_OFFSET] = cData[12]*wx + cData[13]*wy + cData[14]*wz + cData[15]*ww;
+                
+                globalVertices[v+U_OFFSET] = localMesh[index+U_OFFSET];
+                globalVertices[v+V_OFFSET] = localMesh[index+V_OFFSET];
+
+
+                globalVertices[v+WX_OFFSET] = wx;
+                globalVertices[v+WY_OFFSET] = wy;
+                globalVertices[v+WZ_OFFSET] = wz;
+                globalVertices[v+WW_OFFSET] = ww;
+
+                globalVertices[v+NX_OFFSET] = wxNorm;
+                globalVertices[v+NY_OFFSET] = wyNorm;
+                globalVertices[v+NZ_OFFSET] = wzNorm;
+                
+                index += Entity.LOCAL_MESH_STRIDE;
             }
-            currentVerticesIndex += localMesh.length;
-        }
-        currentVerticesSize = currentVerticesIndex;
-    }
-    void convertVerticesToWorldSpace(){
-        int currentVerticesIndex = 0;
-        for(Entity e : entities.values()){
-            double[] entityWorldVectors = e.convertVectorsToWorldSpace();
-            System.arraycopy(entityWorldVectors, 0, globalVertices, currentVerticesIndex, entityWorldVectors.length);
-            currentVerticesIndex += entityWorldVectors.length;
-        }
-        currentVerticesSize = currentVerticesIndex;
-    }
-    void convertVerticesToViewSpace(){
-        CameraManager cm = cameras.get(cameraFocused);
-        double[] vm = cm.viewMatrix.data;
-        for(int v = 0; v < currentVerticesSize; v+=STRIDE){
-            double x = globalVertices[v];
-            double y = globalVertices[v+1];
-            double z = globalVertices[v+2];
-            double w = globalVertices[v+3];
-            globalVertices[v]   = vm[0]*x  + vm[1]*y  + vm[2]*z  + vm[3]*w;
-            globalVertices[v+1] = vm[4]*x  + vm[5]*y  + vm[6]*z  + vm[7]*w;
-            globalVertices[v+2] = vm[8]*x  + vm[9]*y  + vm[10]*z + vm[11]*w;
-            globalVertices[v+3] = vm[12]*x + vm[13]*y + vm[14]*z + vm[15]*w;
-        }
-    } 
-    void convertVerticesToClipSpace(){
-        double [] pm = cameras.get(cameraFocused).projectionMatrix.data;
-        for(int v = 0; v < currentVerticesSize; v+= STRIDE){
-            double x = globalVertices[v];
-            double y = globalVertices[v+1];
-            double z = globalVertices[v+2];
-            double w = globalVertices[v+3];
-            globalVertices[v]   = pm[0]*x  + pm[1]*y  + pm[2]*z  + pm[3]*w;
-            globalVertices[v+1] = pm[4]*x  + pm[5]*y  + pm[6]*z  + pm[7]*w;
-            globalVertices[v+2] = pm[8]*x  + pm[9]*y  + pm[10]*z + pm[11]*w;
-            globalVertices[v+3] = pm[12]*x + pm[13]*y + pm[14]*z + pm[15]*w;
-        }
     }
     void perspectiveDivideVectors(){
         for(int i = 0; i < currentVerticesSize; i+=STRIDE){
-            double w = globalVertices[i + 3];
+            double w = globalVertices[i + W_OFFSET];
             if(w != 0){
-                globalVertices[i] /= globalVertices[i+3];
-                globalVertices[i+1] /= globalVertices[i+3];
-                globalVertices[i+2] /= globalVertices[i+3];
+                globalVertices[i] /= globalVertices[i+W_OFFSET];
+                globalVertices[i+Y_OFFSET] /= globalVertices[i+W_OFFSET];
+                globalVertices[i+Z_OFFSET] /= globalVertices[i+W_OFFSET];
             }
         }
     }
@@ -227,7 +214,7 @@ public class Scene {
         int length = wm.length;
         for(int i = 0; i < currentVerticesSize; i+= STRIDE){
             globalVertices[i] = (1+globalVertices[i]) * 0.5 * width;
-            globalVertices[i+1] = ((1-globalVertices[i+1]) * 0.5 * length);
+            globalVertices[i+Y_OFFSET] = ((1-globalVertices[i+Y_OFFSET]) * 0.5 * length);
         }
     }
     void addCamera(CameraManager cm){
@@ -235,17 +222,28 @@ public class Scene {
         cameraCount++;
     }
     public void addProcessedTriangle(int v0, int v1, int v2, int entityID){
-        processedIndices[processedIndicesSize++] = v0 * STRIDE;
-        processedIndices[processedIndicesSize++] = v1 * STRIDE;
-        processedIndices[processedIndicesSize++] = v2 * STRIDE;
+        v0 *= STRIDE;
+        v1 *= STRIDE;
+        v2 *= STRIDE;
+        processedIndices[processedIndicesSize++] = v0;
+        processedIndices[processedIndicesSize++] = v1;
+        processedIndices[processedIndicesSize++] = v2;
         processedIndices[processedIndicesSize++] = entityID;
+        
+        // calculateTriangleLightLevel(v0, v1, v2);
     }
-
+    public void setLight(double x, double y, double z, double a){
+        xLight = x;
+        yLight = y;
+        zLight = z;
+        ambience = a;
+    }
+    
     public void printSceneData(){
         // System.out.println("current Vertices size: " + currentVerticesSize);
         // System.out.println("current indices size: " + currentIndicesSize);
-        System.out.println("processed indices size: " + processedIndicesSize);
+        // System.out.println("processed indices size: " + processedIndicesSize);
         // System.out.println(Arrays.toString(globalIndices));
-        // System.out.println(Arrays.toString(globalVertices));
+        System.out.println(Arrays.toString(globalVertices));
     }
 }
