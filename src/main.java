@@ -17,7 +17,7 @@ public class main{
 
         Scene world = new Scene();
         world.addCamera(cm);
-        world.setLight(3, 2, 1, 0.3);
+        world.setLight(3, 2, 10, 0.3);
 
         // BufferedImage texture = null;
         // try{

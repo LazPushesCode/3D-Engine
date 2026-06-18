@@ -288,7 +288,7 @@ public class WindowManager {
                vy /= vMagnitude;
                vz /= vMagnitude; 
             }
-            
+
             double hx = lx + vx;
             double hy = ly + vy;
             double hz = lz + vz;
@@ -326,7 +326,7 @@ public class WindowManager {
             double diffuseB = b * dotNL;
 
             double dotNH = Math.max(0.0, (nx * hx) + (ny * hy) + (nz * hz));
-            double spec = Math.pow(dotNH,32);
+            double spec = Math.pow(dotNH,56);
 
             double specularR = 255 * spec;
             double specularG = 255 * spec;
