@@ -17,7 +17,7 @@ public class main{
 
         Scene world = new Scene();
         world.addCamera(cm);
-        world.setLight(3, 3, 1, 0.1);
+        world.setLight(0, 7, 0, 0.1);
 
         // BufferedImage texture = null;
         // try{
@@ -47,48 +47,52 @@ public class main{
         // triangle.setWorldPosition(0, 0, 0);
         // world.addEntity(triangle);
 
-        Entity cube = new Entity();
-        cube.cubeMesh();
-        cube.setWorldPosition(0, 0, 0);
-        cube.applyTexture(grassblock);
-        cube.scale(10, 0, 10);
-        world.addEntity(cube);
+        // Entity cube = new Entity();
+        // cube.cubeMesh();
+        // cube.setWorldPosition(0, 0, 0);
+        // cube.applyTexture(grassblock);
+        // cube.scale(10, 0, 10);
+        // world.addEntity(cube);
+        Entity sphere = new Entity();
+        sphere.sphereMesh(15, 15);
+        sphere.applyTexture(grassblock);
+        world.addEntity(sphere);
 
-        // Entity wall = new Entity();
-        // wall.cubeMesh();
-        // wall.translate(10.5, 0, 0).rotatex(90).scale(20, 20,-0.9);
-        // wall.applyTexture(grassblock);
-        // world.addEntity(wall);
+        Entity wall = new Entity();
+        wall.cubeMesh();
+        wall.translate(10.5, 0, 0).rotatex(90).scale(20, 20,-0.9);
+        wall.applyTexture(grassblock);
+        world.addEntity(wall);
 
-        // Entity wall2 = new Entity();
-        // wall2.cubeMesh();
-        // wall2.translate(-10.5, 0, 0).rotatex(90).scale(20, 20,-0.9);
-        // wall2.applyTexture(grassblock);
-        // world.addEntity(wall2);
+        Entity wall2 = new Entity();
+        wall2.cubeMesh();
+        wall2.translate(-10.5, 0, 0).rotatex(90).scale(20, 20,-0.9);
+        wall2.applyTexture(grassblock);
+        world.addEntity(wall2);
 
-        // Entity wall3 = new Entity();
-        // wall3.cubeMesh();
-        // wall3.translate(0, 0, 10.5).rotatex(0).scale(20, 20,-0.9);
-        // wall3.applyTexture(grassblock);
-        // world.addEntity(wall3);
+        Entity wall3 = new Entity();
+        wall3.cubeMesh();
+        wall3.translate(0, 0, 10.5).rotatex(0).scale(20, 20,-0.9);
+        wall3.applyTexture(grassblock);
+        world.addEntity(wall3);
 
-        // Entity wall4 = new Entity();
-        // wall4.cubeMesh();
-        // wall4.translate(0, 0, -10.5).rotatex(0).scale(20, 20,-0.9);
-        // wall4.applyTexture(grassblock);
-        // world.addEntity(wall4);
+        Entity wall4 = new Entity();
+        wall4.cubeMesh();
+        wall4.translate(0, 0, -10.5).rotatex(0).scale(20, 20,-0.9);
+        wall4.applyTexture(grassblock);
+        world.addEntity(wall4);
 
-        // Entity floor = new Entity();
-        // floor.cubeMesh();
-        // floor.translate(0, -10.5, 0).rotatex(90).scale(20, -0.9,20);
-        // floor.applyTexture(grassblock);
-        // world.addEntity(floor);
+        Entity floor = new Entity();
+        floor.cubeMesh();
+        floor.translate(0, -10.5, 0).rotatex(90).scale(20, -0.9,20);
+        floor.applyTexture(grassblock);
+        world.addEntity(floor);
 
-        // Entity ceiling = new Entity();
-        // ceiling.cubeMesh();
-        // ceiling.translate(0, 10.5, 0).rotatex(90).scale(20, -0.9,20);
-        // ceiling.applyTexture(grassblock);
-        // world.addEntity(ceiling);
+        Entity ceiling = new Entity();
+        ceiling.cubeMesh();
+        ceiling.translate(0, 10.5, 0).rotatex(90).scale(20, -0.9,20);
+        ceiling.applyTexture(grassblock);
+        world.addEntity(ceiling);
         
 
 

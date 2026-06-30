@@ -75,11 +75,30 @@ public class Scene {
         entityCount++;
     }
     void bindVertices(){
-        initialVerticesSize = entities.size() * 1000;
+        initialVerticesSize = calculateVerticeCount();
         globalVertices = new double[initialVerticesSize];
-        initialIndicesSize = entities.size() * 60;
+        initialIndicesSize = calculateTriangleCount();
+
+        // initialIndicesSize = entities.size() * 120;
+
         globalIndices = new int[initialIndicesSize];
         processedIndices = new int[initialIndicesSize*2];
+    }
+    int calculateVerticeCount(){
+        int sum = 0;
+        for(Entity e: entities.values()){
+            int verticeCount = e.vertices.length / 6;
+            sum += verticeCount * STRIDE;
+        }
+        return sum;
+    }
+    int calculateTriangleCount(){
+        int sum = 0;
+        for(Entity e : entities.values()){
+            int indiceCount = e.indices.length / 3;
+            sum += indiceCount * 4;
+        }
+        return sum;
     }
     void resetSceneFrameData(){
         processedIndicesSize = 0;

@@ -139,10 +139,57 @@ public class Entity {
             20, 22, 23,
             20, 23, 21
         };
-        System.out.println("before: " + Arrays.toString(cubeVertices));
         cubeVertices = bakeNormalVectors(cubeVertices, cubeIndices);
-         System.out.println("after: " + Arrays.toString(cubeVertices));
         initializeArrays(cubeVertices, cubeIndices);
+        initializeVariables();
+        transformation = Matrix.Identity();
+        hasTexture = false;
+    }
+    void sphereMesh(int m, int n){
+        int offset = 6;
+        double[] sphereVertices = new double[(((m+1) * (n+1))* offset)];
+        int verticesIndex = 0;
+        for(int i = 0; i <= m; i++){
+            double fy = ((double)i / (double)m);
+            for(int j = 0; j <= n; j++){
+                double fx = ((double)j / (double)n);
+                double pihalf = -((double)Math.PI/2);
+                double longtitude = -((double)(Math.PI/2)) + fy * Math.PI;
+                double latitude = fx * 2 * Math.PI;
+                double x = Math.cos(longtitude)  * Math.cos(latitude);
+                double y = Math.sin(longtitude);
+                double z = Math.cos(longtitude) * Math.sin(latitude);
+                sphereVertices[verticesIndex] = x;
+                sphereVertices[verticesIndex+1] = y;
+                sphereVertices[verticesIndex+2] = z;
+                sphereVertices[verticesIndex+3] = 1;
+                sphereVertices[verticesIndex+4] = fx;
+                sphereVertices[verticesIndex+5] = fy;
+                verticesIndex+=offset;
+            }
+        }
+        int[] sphereIndices = new int[m * n * 2 * 3];
+        int indicesIndex = 0;
+        for(int i = 0; i < m; i++){
+            for(int j = 0; j < n; j++){
+                int p0 = i * (n+1) + j;
+                int p1 = (i+1) * (n+1) + j;
+                int p2 = p1 + 1;
+                int p3 = p0 + 1;
+
+                sphereIndices[indicesIndex] = p0;
+                sphereIndices[indicesIndex+1] = p1;
+                sphereIndices[indicesIndex+2] = p3;
+
+                sphereIndices[indicesIndex+3] = p1;
+                sphereIndices[indicesIndex+4] = p2;
+                sphereIndices[indicesIndex+5] = p3; 
+
+                indicesIndex += 6;
+            }
+        }
+        sphereVertices = bakeNormalVectors(sphereVertices, sphereIndices);
+        initializeArrays(sphereVertices, sphereIndices);
         initializeVariables();
         transformation = Matrix.Identity();
         hasTexture = false;
