@@ -76,7 +76,7 @@ public class Scene {
     }
     void bindVertices(){
         initialVerticesSize = calculateVerticeCount();
-        globalVertices = new double[initialVerticesSize];
+        globalVertices = new double[initialVerticesSize* 2];
         initialIndicesSize = calculateTriangleCount();
 
         // initialIndicesSize = entities.size() * 120;

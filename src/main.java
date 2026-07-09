@@ -18,16 +18,7 @@ public class main{
         Scene world = new Scene();
         world.addCamera(cm);
         world.setLight(0, 7, 0, 0.1);
-
-        // BufferedImage texture = null;
-        // try{
-        //     texture = ImageIO.read(new File("C:\\Users\\lazar\\3D-Engine\\resources\\assets\\11635.png"));
-        //     int texHeight = texture.getHeight();
-        //     int texWidth = texture.getWidth();
-        //     int[] texBuffer = new int[texHeight * texWidth];
-        //     texture.getRGB(0,0,texWidth,texHeight, texBuffer, 0, texWidth);
-        // } catch (Exception e){
-        // }
+        
         Texture grassblock = new Texture("C:\\Users\\lazar\\3D-Engine\\resources\\assets\\11635.png");
         
         // for(int i = -30; i < 30; i++){
@@ -54,9 +45,10 @@ public class main{
         // cube.scale(10, 0, 10);
         // world.addEntity(cube);
         Entity sphere = new Entity();
-        sphere.sphereMesh(15, 15);
+        sphere.sphereMesh(25, 25);
         sphere.applyTexture(grassblock);
         world.addEntity(sphere);
+
 
         Entity wall = new Entity();
         wall.cubeMesh();
@@ -171,6 +163,7 @@ while(true){
         Thread.sleep(1);
         frames++;
         
+
         long now = System.currentTimeMillis();
         if(now - lastFpsTime >= 1000){
             System.out.println("=========================================");
