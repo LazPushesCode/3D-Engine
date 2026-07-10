@@ -249,6 +249,10 @@ public class WindowManager {
       int yLocal = py + (int)(t.tileLength - t.yOffset);
       int pixel = (yLocal * tileW) + xLocal;
 
+      boolean directional = (s.type == Light.DIRECTIONAL);
+      boolean point = (s.type == Light.POINT);
+      boolean spotlight = (s.type == Light.SPOTLIGHT);
+
       if(localDepthTest(t,px, py, z)){
          if(e.hasTexture){
             int textureWidth = e.textureWidth;
@@ -263,13 +267,26 @@ public class WindowManager {
             double cy = c.y;
             double cz = c.z;
 
-            double ax = s.xLight;
-            double ay = s.yLight;
-            double az = s.zLight;
+            double ax = s.xLightPos;
+            double ay = s.yLightPos;
+            double az = s.zLightPos;
 
-            double lx = ax - wx;
-            double ly = ay - wy;
-            double lz = az - wz;
+            double dx = s.xLightDir;
+            double dy = s.yLightDir;
+            double dz = s.zLightDir;
+
+            double lx;
+            double ly;
+            double lz;
+            if(directional){
+               lx = dx;
+               ly = dy;
+               lz = dz;
+            } else {
+               lx = ax - wx;
+               ly = ay - wy;
+               lz = az - wz;
+            }
 
             double lMagnitude = Math.sqrt(lx*lx + ly*ly + lz*lz);
             if(lMagnitude > 0){
@@ -277,7 +294,16 @@ public class WindowManager {
                ly /= lMagnitude;
                lz /= lMagnitude;
             }
-            
+
+            double attenuation = 0;
+
+            if(!directional){
+               double constant = 1.0;
+               double linear = 0.05;
+               double quadratic = 0.02;
+               attenuation = (1.0)/(constant + (linear * lMagnitude) + (quadratic * lMagnitude * lMagnitude));
+            }
+
             double vx = cx - wx;
             double vy = cy - wy;
             double vz = cz - wz;
@@ -294,9 +320,11 @@ public class WindowManager {
             double hz = lz + vz;
 
             double magnitude = Math.sqrt(hx*hx + hy*hy + hz*hz);
-            hx = hx/magnitude;
-            hy = hy/magnitude;
-            hz = hz/magnitude;
+            if(magnitude > 0){
+               hx = hx/magnitude;
+               hy = hy/magnitude;
+               hz = hz/magnitude;
+            }
 
             double lightIntensity = s.ambience;
 
@@ -320,17 +348,49 @@ public class WindowManager {
             double ambientB = b * lightIntensity;
 
             double dotNL = Math.max(0.0, (nx * lx) + (ny * ly) + (nz * lz));
-
-            double diffuseR = r * dotNL;
-            double diffuseG = g * dotNL;
-            double diffuseB = b * dotNL;
-
             double dotNH = Math.max(0.0, (nx * hx) + (ny * hy) + (nz * hz));
             double spec = Math.pow(dotNH,1000);
 
-            double specularR = 255 * spec;
-            double specularG = 255 * spec;
-            double specularB = 255 * spec;
+            double diffuseR;
+            double diffuseG;
+            double diffuseB;
+            double specularR;
+            double specularG;
+            double specularB;
+
+            diffuseR = (r * dotNL);
+            diffuseG = (g * dotNL);
+            diffuseB = (b * dotNL);
+            specularR = (255 * spec);
+            specularG = (255 * spec);
+            specularB = (255 * spec);
+
+            if(!directional){
+               diffuseR *= attenuation;
+               diffuseG *= attenuation;
+               diffuseB *= attenuation;
+
+               specularR *= attenuation;
+               specularG *= attenuation;
+               specularB *= attenuation;
+            }
+
+            if(spotlight){
+               double angle = (dx * -lx) + (dy * -ly ) + (dz * -lz);
+               double innerCutOff = 1.0;
+               double outerCutOff = .5;
+               double epsilon = innerCutOff - outerCutOff;
+               double intensity = (angle - outerCutOff) / epsilon;
+               double spotIntensity = Math.max(0, Math.min(1.0, intensity));
+
+               diffuseR *= spotIntensity;
+               diffuseG *= spotIntensity;
+               diffuseB *= spotIntensity;
+
+               specularR *= spotIntensity;
+               specularG *= spotIntensity;
+               specularB *= spotIntensity;
+            }
 
             int finalR = (int) Math.max(0, Math.min(255, ambientR + diffuseR + specularR));
             int finalG = (int) Math.max(0, Math.min(255, ambientG + diffuseG + specularG));
@@ -339,7 +399,6 @@ public class WindowManager {
             color = 0xFF000000 | (finalR << 16) | (finalG << 8) | finalB;
 
             t.tileDepthBuffer[pixel] = (float)z;
-            // t.tileColorBuffer[pixel] = texture.getRGB((int)texU, (int)texV);
             t.tileColorBuffer[pixel] = color;
 
          } else {

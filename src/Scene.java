@@ -31,9 +31,15 @@ public class Scene {
 
     int cameraFocused;
 
-    double xLight;
-    double yLight;
-    double zLight;
+    double xLightPos;
+    double yLightPos;
+    double zLightPos;
+    double xLightDir;
+    double yLightDir;
+    double zLightDir;
+
+    int type = 0;
+
     double ambience;
 
     double[] globalVertices;
@@ -64,9 +70,12 @@ public class Scene {
         threadEntityOffsets = new int[threadCount];
         entityPool = Executors.newFixedThreadPool(threadCount);
 
-        xLight = 0;
-        yLight = 0;
-        zLight = 0;
+        xLightPos = 0;
+        yLightPos = 0;
+        zLightPos = 0;
+        xLightDir = 0;
+        yLightDir = 0;
+        zLightDir = 0;
         ambience = 0;
     }
     void addEntity(Entity et){
@@ -251,10 +260,13 @@ void assignEntitiesToThreads(){
         
         // calculateTriangleLightLevel(v0, v1, v2);
     }
-    public void setLight(double x, double y, double z, double a){
-        xLight = x;
-        yLight = y;
-        zLight = z;
+    public void setLight(double x, double y, double z, double dx, double dy, double dz, double a){
+        xLightPos = x;
+        yLightPos = y;
+        zLightPos = z;
+        xLightDir = dx;
+        yLightDir = dy;
+        zLightDir = dz;
         ambience = a;
     }
     
