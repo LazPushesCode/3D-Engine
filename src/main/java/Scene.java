@@ -7,6 +7,8 @@ import java.util.concurrent.Executors;
 public class Scene {
     HashMap<Integer, Entity> entities;
     HashMap<Integer, CameraManager> cameras;
+    HashMap<Integer, Light> lights;
+    
 
     static final int STRIDE = 13;
 
@@ -26,8 +28,11 @@ public class Scene {
 
     static final int PROCESSED_STRIDE = 3;
 
+    static final int LIGHT_STRIDE = 8;
+
     int entityCount;
     int cameraCount;
+    int lightCount;
 
     int cameraFocused;
 
@@ -37,8 +42,10 @@ public class Scene {
     double xLightDir;
     double yLightDir;
     double zLightDir;
+    double yaw, pitch;
+    double lightIntensity;
 
-    int type = 0;
+    int type;
 
     double ambience;
 
@@ -51,6 +58,8 @@ public class Scene {
     int processedIndicesSize;
     int currentVerticesSize;
 
+    double[] lightBuffer;
+
     int [] threadEntityOffsets;
     int threadCount;
     ExecutorService entityPool;
@@ -58,6 +67,7 @@ public class Scene {
     Scene(){
         entities = new HashMap<>();
         cameras = new HashMap<>();
+        lights = new HashMap<>(); 
         cameraFocused = 0;
         entityCount = 0;
         cameraCount = 0;
@@ -76,12 +86,24 @@ public class Scene {
         xLightDir = 0;
         yLightDir = 0;
         zLightDir = 0;
+        type = 0;
         ambience = 0;
     }
     void addEntity(Entity et){
         entities.put(entityCount, et);
         et.ID = entityCount;
         entityCount++;
+    }
+    void addEntityChildren(Entity e){
+        for(Entity c : e.children.values()){
+            addEntity(c);
+        }
+    }
+    void addLight(Light lt){
+        lights.put(lightCount, lt);
+        lt.ID = lightCount;
+        lightCount++;
+        lightBuffer = new double[LIGHT_STRIDE * lightCount];
     }
     void bindVertices(){
         initialVerticesSize = calculateVerticeCount();
@@ -260,16 +282,42 @@ void assignEntitiesToThreads(){
         
         // calculateTriangleLightLevel(v0, v1, v2);
     }
-    public void setLight(double x, double y, double z, double dx, double dy, double dz, double a){
+    void fillLightBuffer(){
+        int currentLight = 0;
+        for(Light l : lights.values()){
+            int index = currentLight * LIGHT_STRIDE;
+            lightBuffer[index] = l.x;
+            lightBuffer[index+1] = l.y;
+            lightBuffer[index+2] = l.z;
+            lightBuffer[index+3] = l.xDir;
+            lightBuffer[index+4] = l.yDir;
+            lightBuffer[index+5] = l.zDir;
+            lightBuffer[index+6] = l.intensity;
+            lightBuffer[index+7] = l.type;
+            currentLight++;
+        }
+    }
+    public void setLight(int t, double intensity, double x, double y, double z, double lightYaw, double lightPitch, double a){
         xLightPos = x;
         yLightPos = y;
         zLightPos = z;
-        xLightDir = dx;
-        yLightDir = dy;
-        zLightDir = dz;
+        yaw = lightYaw;
+        pitch = lightPitch;
         ambience = a;
+        lightIntensity = intensity;
+        type = t;
     }
-    
+    void applyLightRotations(){
+        for(Light l : lights.values()){
+            l.applyRotation();
+        }
+    }
+    void LightYawRotate(double y){
+        yaw += y;
+    }
+    void lightPitchRotate(double p){
+        pitch += p;
+    }
     public void printSceneData(){
         // System.out.println("current Vertices size: " + currentVerticesSize);
         // System.out.println("current indices size: " + currentIndicesSize);

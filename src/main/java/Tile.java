@@ -7,8 +7,10 @@ public class Tile {
     int[] tileColorBuffer;
     float[] tileDepthBuffer;
 
+    int id;
 
-    Tile(double x, double y, double w, double l, int count){
+
+    Tile(int tileID, double x, double y, double w, double l, int count){
         xOffset = x;
         yOffset = y;
         tileWidth = w;
@@ -16,6 +18,7 @@ public class Tile {
         indicesCount = 0;
         visibleIndices = new int[count];
 
+        id = tileID;
 
         tileColorBuffer = new int[(int)tileWidth * (int)tileLength];
         tileDepthBuffer = new float[(int)tileWidth * (int)tileLength];

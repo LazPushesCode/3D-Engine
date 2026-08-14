@@ -20,7 +20,7 @@ public class TileManager {
         double yOffset = tileLength;
         System.out.println("cores: " + cores +" width: " + tileWidth + " length: " + tileLength);
         for(int i = 0; i < tileCount; i++){
-            tiles.add(new Tile(xOffset, yOffset, tileWidth, tileLength, s.initialIndicesSize));
+            tiles.add(new Tile(i, xOffset, yOffset, tileWidth, tileLength, s.initialIndicesSize));
             yOffset += tileLength;
         }
     }

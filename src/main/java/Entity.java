@@ -1,5 +1,6 @@
 import java.awt.image.BufferedImage;
 import java.util.Arrays;
+import java.util.HashMap;
 
 public class Entity {
     //keep
@@ -11,29 +12,45 @@ public class Entity {
     int textureWidth;
     boolean hasTexture;
 
+    double materialDiffuse;
+    double materialSpecular;
+    double materialShininess;
+
+    boolean greenScreen;
+
     BufferedImage texture;
     Matrix transformation;
     double x, y, z;
     double yaw, pitch, roll;
     double xSize, ySize, zSize;
+    Quaternion orientation;
     int globalVerticeOffset;
     int globalIndiceOffset;
     int defaultColor = 0xFFFFFF;
 
-    //remove
+    Entity parent;
+    HashMap<Integer, Entity> children;
+    HashMap<Integer, int[]> skeleton;
 
     int ID;
+    int childrenCount;
 
     static final int INITIAL_MESH_STRIDE = 6;
     static final int LOCAL_MESH_STRIDE = 9;
 
 
     Entity(){
-
-    }
-    Entity(double [] vertices, int [] ind, Matrix m, Matrix d){
         initializeVariables();
-        this.transformation = d;
+        transformation = Matrix.Identity();
+        hasTexture = false;
+        parent = null;
+    }
+    Entity(double [] vertices, int [] ind, Matrix d){
+        vertices = bakeNormalVectors(vertices, ind);
+        initializeArrays(vertices, ind);
+        initializeVariables();
+        transformation = Matrix.Identity();
+        hasTexture = false;
     }
     void initializeVariables(){
         x = 0;
@@ -45,20 +62,43 @@ public class Entity {
         xSize = 1;
         ySize = 1;
         zSize = 1;
+        orientation = new Quaternion();
+        materialDiffuse = 0.8;
+        materialSpecular = 0.5;
+        materialShininess = 64;
+        greenScreen = false;
+        childrenCount = 0;
+        children = new HashMap<>();
     }
     void applyTransformationValues(){
-        transformation = Matrix.Translate(x,y,z)
-        .multiply(Matrix.Rotatex(yaw)
-        .multiply(Matrix.Rotatey(pitch))
-        .multiply(Matrix.Rotatez(roll))
-        .multiply(Matrix.Scale(xSize,ySize,zSize)));
+
+        Matrix T = Matrix.Translate(x, y, z);
+        Matrix R = Matrix.Rotate(orientation);
+        Matrix S = Matrix.Scale(xSize, ySize, zSize);
+        transformation = T.multiply(R.multiply(S));
+
+        // transformation = Matrix.Translate(x, y, z)
+        // .multiply(Matrix.Rotate(orientation)
+        // .multiply(Matrix.Scale(xSize, ySize, zSize)));
+
+        if(parent != null){
+            transformation = parent.transformation.multiply(transformation);
+        }
     }
     void applyTexture(Texture texture){
         textureHeight = texture.height;
         textureWidth = texture.width;
-        // textureBuffer = new int[textureHeight * textureWidth];
         textureBuffer = texture.buffer;
         hasTexture = true;
+    }
+    void applyMP4(VideoDecoder vd){
+        textureHeight = vd.getHeight();
+        textureWidth = vd.getWidth();
+        textureBuffer = vd.getFrameBuffer();
+        hasTexture = true;
+    }
+    void applyNewMP4Frame(int[] buffer){
+        textureBuffer = buffer;
     }
     void setTexture(BufferedImage t){
         try{
@@ -178,12 +218,12 @@ public class Entity {
                 int p3 = p0 + 1;
 
                 sphereIndices[indicesIndex] = p0;
-                sphereIndices[indicesIndex+1] = p1;
-                sphereIndices[indicesIndex+2] = p3;
+                sphereIndices[indicesIndex+1] = p3;
+                sphereIndices[indicesIndex+2] = p1;
 
                 sphereIndices[indicesIndex+3] = p1;
-                sphereIndices[indicesIndex+4] = p2;
-                sphereIndices[indicesIndex+5] = p3; 
+                sphereIndices[indicesIndex+4] = p3;
+                sphereIndices[indicesIndex+5] = p2; 
 
                 indicesIndex += 6;
             }
@@ -297,6 +337,72 @@ public class Entity {
         initializeVariables();
         transformation = Matrix.Identity();
     }
+    static Entity generateFlat3DShape(double[] blueprint, int vertCount){
+        int totalVertices = (vertCount+vertCount+(4*vertCount));
+        int doubleVerticeCount = vertCount*2;
+        int totalSideTriangles = (doubleVerticeCount)*3;
+        int totalFrontAndBackTriangles = (vertCount - 2) * 3 * 2;
+        double[] shapeVertices = new  double[totalVertices*INITIAL_MESH_STRIDE];
+        int[] shapeIndices = new int[totalSideTriangles + totalFrontAndBackTriangles];
+        int triCount = vertCount - 2;
+        int verticeIndex = 0;
+        int currVertex = 0;
+        int indiceIndex = 0;
+        int halfway = vertCount * INITIAL_MESH_STRIDE;
+        System.arraycopy(blueprint, 0, shapeVertices, 0, halfway);
+        System.arraycopy(blueprint, halfway, shapeVertices, halfway, halfway);
+        currVertex = (vertCount + vertCount);
+        verticeIndex = currVertex*INITIAL_MESH_STRIDE;
+        indiceIndex= (totalFrontAndBackTriangles);
+        for(int i = 0; i < triCount; i++){
+            int frontIndex = i * 3;
+            int backStride = (i+triCount);
+            int backIndex = backStride * 3;
+            System.out.println("f: " + frontIndex + " b: " + backIndex);
+            shapeIndices[frontIndex] = 0;
+            shapeIndices[frontIndex+1] = i + 1;
+            shapeIndices[frontIndex+2] = i + 2;
+            shapeIndices[backIndex] = vertCount;
+            shapeIndices[backIndex+1] = i+vertCount+2;
+            shapeIndices[backIndex+2] = i+vertCount+1;
+        }  
+        System.out.println("indices; " + Arrays.toString(shapeIndices) + " filled: " + totalFrontAndBackTriangles);
+        int a = 0, b = vertCount, c = vertCount+1, d = 1;
+        System.out.println("blueprint: " + Arrays.toString(blueprint));
+        for(int i = 0; i < vertCount; i++){
+            System.out.println("a: " + a + " b: " +b + " c: " + c + " d: " + d);
+            System.arraycopy(blueprint, a*INITIAL_MESH_STRIDE, shapeVertices, verticeIndex, INITIAL_MESH_STRIDE);
+            System.arraycopy(blueprint, b*INITIAL_MESH_STRIDE, shapeVertices, verticeIndex+6, INITIAL_MESH_STRIDE);
+            System.arraycopy(blueprint, c*INITIAL_MESH_STRIDE, shapeVertices, verticeIndex+12, INITIAL_MESH_STRIDE);
+            System.arraycopy(blueprint, d*INITIAL_MESH_STRIDE, shapeVertices, verticeIndex+18, INITIAL_MESH_STRIDE);
+            
+            shapeIndices[indiceIndex] = currVertex;
+            shapeIndices[indiceIndex+1] = currVertex+1;
+            shapeIndices[indiceIndex+2] = currVertex+2;
+            shapeIndices[indiceIndex+3] = currVertex;
+            shapeIndices[indiceIndex+4] = currVertex+2;
+            shapeIndices[indiceIndex+5] = currVertex+3;
+            a++;
+            b++;
+            c = (c < doubleVerticeCount-1) ? c + 1 : vertCount;
+            d = (d < vertCount-1) ? d + 1 : 0;
+            indiceIndex += 6;
+            verticeIndex += 24;
+            currVertex += 4;
+        }
+        System.out.println("indiceIndex: " +indiceIndex + " indices: " + Arrays.toString(shapeIndices));
+        System.out.println("vertices: " + Arrays.toString(shapeVertices));
+        return new Entity(shapeVertices, shapeIndices, Matrix.identity());
+    }
+    void addChild(Entity child){
+        children.put(childrenCount, child);
+        child.ID = childrenCount;
+        child.parent = this;
+        childrenCount++;
+    }
+    void setGreenScreen(boolean b){
+        greenScreen = b;
+    }
     Entity setWorldPosition(double givenx, double giveny, double givenz){
         x = givenx;
         y = giveny;
@@ -329,6 +435,36 @@ public class Entity {
     }
     Entity rotatez(double degree){
         roll += degree;
+        return this;
+    }
+    Entity rotatexWorld(double degrees){
+        Quaternion newOrientation = Quaternion.nextOrientation(1, 0, 0, degrees);
+        orientation = newOrientation.multiply(orientation).normalize();
+        return this;
+    }
+    Entity rotateyWorld(double degrees){
+        Quaternion newOrientation = Quaternion.nextOrientation(0, 1, 0, degrees);
+        orientation = newOrientation.multiply(orientation).normalize();
+        return this;
+    }
+    Entity rotatezWorld(double degrees){
+        Quaternion newOrientation = Quaternion.nextOrientation(0, 0, 1, degrees);
+        orientation = newOrientation.multiply(orientation).normalize();
+        return this;
+    }
+    Entity rotatexLocal(double degrees){
+        Quaternion newOrientation = Quaternion.nextOrientation(1, 0, 0, degrees);
+        orientation = orientation.multiply(newOrientation).normalize();
+        return this;
+    }
+    Entity rotateyLocal(double degrees){
+        Quaternion newOrientation = Quaternion.nextOrientation(0, 1, 0, degrees);
+        orientation = orientation.multiply(newOrientation).normalize();
+        return this;
+    }
+    Entity rotatezLocal(double degrees){
+        Quaternion newOrientation = Quaternion.nextOrientation(0, 0, 1, degrees);
+        orientation = orientation.multiply(newOrientation).normalize();
         return this;
     }
     void resetFrameData(){
