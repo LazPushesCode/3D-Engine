@@ -17,7 +17,6 @@ public class Tile {
         tileLength = l;
         indicesCount = 0;
         visibleIndices = new int[count];
-
         id = tileID;
 
         tileColorBuffer = new int[(int)tileWidth * (int)tileLength];
@@ -29,8 +28,8 @@ public class Tile {
     void emptyTileData(){
         indicesCount = 0;
 
-        java.util.Arrays.fill(tileColorBuffer, 0);
-        java.util.Arrays.fill(tileDepthBuffer, 0);
+       java.util.Arrays.fill(tileColorBuffer, 0xFF000000);
+       java.util.Arrays.fill(tileDepthBuffer, -Float.MAX_VALUE);
 
     }
     void displayData(){

@@ -11,6 +11,8 @@ public class Light {
     double xDir, yDir, zDir;
     double intensity;
     int type;
+
+    double r, g, b;
     
 
     Light(double tx, double ty, double tz){
@@ -21,6 +23,9 @@ public class Light {
         yaw = 0;
         pitch = 0;
         intensity = 1;
+        r = 1;
+        g = 1;
+        b = 1;
     }
     Light(int giventype, double tx, double ty, double tz){
         type = giventype;
@@ -43,6 +48,11 @@ public class Light {
     void setIntensity(double givenIntensity){
         intensity = givenIntensity;
     }
+    void setColor(double tr, double tg, double tb){
+        r = tr;
+        g = tg;
+        b = tb;
+    }
     void yawRotation(double degree){
         yaw += degree;
     }
@@ -56,5 +66,8 @@ public class Light {
         xDir = Math.sin(yRadians) * Math.cos(pRadians);
         yDir = Math.sin(pRadians);
         zDir = Math.cos(yRadians) * Math.cos(pRadians);
+    }
+    void translate(double tx, double ty, double tz){
+        x += tx; y += ty; z += tz;
     }
 }

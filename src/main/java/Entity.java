@@ -70,6 +70,11 @@ public class Entity {
         childrenCount = 0;
         children = new HashMap<>();
     }
+    void setMaterialValues(double diff, double spec, double shiny){
+        materialDiffuse = diff;
+        materialSpecular = spec;
+        materialShininess = shiny;
+    }
     void applyTransformationValues(){
 
         Matrix T = Matrix.Translate(x, y, z);
@@ -115,7 +120,7 @@ public class Entity {
         vertices = givenVertices;
         indices = givenIndices;
     }
-    void cubeMesh(){
+    void cubeMesh(boolean inverted){
         double [] cubeVertices = {
             //top
             0.5,0.5,0.5,1, 1, 0,//0
@@ -154,64 +159,129 @@ public class Entity {
             -0.5,-0.5,-0.5,1, 0, 1,//23
             
         };
-        int [] cubeIndices = {
-            //top
-            0, 2, 1,
-            2, 3, 1,
+        // int [] cubeIndices = {
+        //     //top
+        //     0, 2, 1,
+        //     2, 3, 1,
 
-            //front
-            5, 4, 6,
-            5, 6, 7,
+        //     //front
+        //     5, 4, 6,
+        //     5, 6, 7,
 
-            //right
-            9, 8, 10,
-            9, 10, 11,
+        //     //right
+        //     9, 8, 10,
+        //     9, 10, 11,
 
-            //left
-            12, 13, 15,
-            12, 15, 14,
+        //     //left
+        //     12, 13, 15,
+        //     12, 15, 14,
 
-            //back
-            16, 17, 19,
-            16, 19, 18,
+        //     //back
+        //     16, 17, 19,
+        //     16, 19, 18,
 
-            //bottom
-            20, 22, 23,
-            20, 23, 21
-        };
+        //     //bottom
+        //     20, 22, 23,
+        //     20, 23, 21
+        // };
+        int[] cubeIndices = cubeIndiceDirection(inverted);
         cubeVertices = bakeNormalVectors(cubeVertices, cubeIndices);
         initializeArrays(cubeVertices, cubeIndices);
         initializeVariables();
         transformation = Matrix.Identity();
         hasTexture = false;
     }
-    void sphereMesh(int m, int n){
-        int offset = 6;
-        double[] sphereVertices = new double[(((m+1) * (n+1))* offset)];
+    int[] cubeIndiceDirection(boolean flag){
+        if(!flag){
+            return new int[] {
+            //top
+                0, 2, 1,
+                2, 3, 1,
+
+                //front
+                5, 4, 6,
+                5, 6, 7,
+
+                //right
+                9, 8, 10,
+                9, 10, 11,
+
+                //left
+                12, 13, 15,
+                12, 15, 14,
+
+                //back
+                16, 17, 19,
+                16, 19, 18,
+
+                //bottom
+                20, 22, 23,
+                20, 23, 21
+            };
+        } else {
+            return new int[] {
+            //top
+                0, 1, 2,
+                2, 1, 3,
+
+                //front
+                5, 6, 4,
+                5, 7, 6,
+
+                //right
+                9, 10, 8,
+                9, 11, 10,
+
+                //left
+                12, 15, 13,
+                12, 14, 15,
+
+                //back
+                16, 19, 17,
+                16, 18, 19,
+
+                //bottom
+                20, 23, 22,
+                20, 21, 23
+            };
+        }
+    }
+    
+    void sphereMesh(int m, int n, double outerRadius, double innerRadius, int uStart, int uEnd, int vStart, int vEnd){
+        int verticeCount = (m+1)*(n+1);
+        double[] sphereVertices = new double[((verticeCount)*2* INITIAL_MESH_STRIDE)];
         int verticesIndex = 0;
-        for(int i = 0; i <= m; i++){
-            double fy = ((double)i / (double)m);
-            for(int j = 0; j <= n; j++){
-                double fx = ((double)j / (double)n);
-                double pihalf = -((double)Math.PI/2);
-                double longtitude = -((double)(Math.PI/2)) + fy * Math.PI;
-                double latitude = fx * 2 * Math.PI;
-                double x = Math.cos(longtitude)  * Math.cos(latitude);
-                double y = Math.sin(longtitude);
-                double z = Math.cos(longtitude) * Math.sin(latitude);
-                sphereVertices[verticesIndex] = x;
-                sphereVertices[verticesIndex+1] = y;
-                sphereVertices[verticesIndex+2] = z;
-                sphereVertices[verticesIndex+3] = 1;
-                sphereVertices[verticesIndex+4] = fx;
-                sphereVertices[verticesIndex+5] = fy;
-                verticesIndex+=offset;
+        for(double r : new double[]{innerRadius, outerRadius}){
+            for(int i = 0; i <= m; i++){
+                double fy = ((double)i / (double)m);
+                for(int j = 0; j <= n; j++){
+                    double fx = ((double)j / (double)n);
+                    double pihalf = -((double)Math.PI/2);
+                    double longtitude = -((double)(Math.PI/2)) + fy * Math.PI;
+                    double latitude = fx * 2 * Math.PI;
+                    double x = r*Math.cos(longtitude)  * Math.cos(latitude);
+                    double y = r*Math.sin(longtitude);
+                    double z = r*Math.cos(longtitude) * Math.sin(latitude);
+                    sphereVertices[verticesIndex] = x;
+                    sphereVertices[verticesIndex+1] = y;
+                    sphereVertices[verticesIndex+2] = z;
+                    sphereVertices[verticesIndex+3] = 1;
+                    sphereVertices[verticesIndex+4] = fx;
+                    sphereVertices[verticesIndex+5] = fy;
+                    verticesIndex+=INITIAL_MESH_STRIDE;
+                }
             }
         }
-        int[] sphereIndices = new int[m * n * 2 * 3];
+        int indiceAllocation = m * n * 2 * 3;
+        int[] sphereIndices = new int[indiceAllocation*2];
         int indicesIndex = 0;
         for(int i = 0; i < m; i++){
             for(int j = 0; j < n; j++){
+                boolean insideU = (j >= uStart && j < uEnd);
+                boolean insideV = (i >= vStart && i < vEnd);
+                if(insideU && insideV){
+                    continue;
+                }
                 int p0 = i * (n+1) + j;
                 int p1 = (i+1) * (n+1) + j;
                 int p2 = p1 + 1;
@@ -225,9 +295,84 @@ public class Entity {
                 sphereIndices[indicesIndex+4] = p3;
                 sphereIndices[indicesIndex+5] = p2; 
 
+                sphereIndices[indicesIndex+indiceAllocation] = p0+verticeCount;
+                sphereIndices[indicesIndex+indiceAllocation+1] = p1+verticeCount;
+                sphereIndices[indicesIndex+indiceAllocation+2] = p3+verticeCount;
+
+                sphereIndices[indicesIndex+indiceAllocation+3] = p1+verticeCount;
+                sphereIndices[indicesIndex+indiceAllocation+4] = p2+verticeCount;
+                sphereIndices[indicesIndex+indiceAllocation+5] = p3+verticeCount; 
+
                 indicesIndex += 6;
             }
         }
+        sphereIndices = Arrays.copyOf(sphereIndices, indicesIndex*2);
+        sphereVertices = bakeNormalVectors(sphereVertices, sphereIndices);
+        initializeArrays(sphereVertices, sphereIndices);
+        initializeVariables();
+        transformation = Matrix.Identity();
+        hasTexture = false;
+    }
+    void partialSphere(int m, int n, double outerRadius, double innerRadius, double percent, int uStart, int uEnd, int vStart, int vEnd){
+        int sphereFilled = (int)Math.ceil(n *(percent/100));
+        System.out.println("spherefilled: " + sphereFilled);
+        int verticeCount = (m+1)*(n+1);
+        double[] sphereVertices = new double[((verticeCount)*2* INITIAL_MESH_STRIDE)];
+        int verticesIndex = 0;
+        for(double r : new double[]{innerRadius, outerRadius}){
+            for(int i = 0; i <= m; i++){
+                double fy = ((double)i / (double)m);
+                for(int j = 0; j <= n; j++){
+                    double fx = ((double)j / (double)n);
+                    double pihalf = -((double)Math.PI/2);
+                    double longtitude = -((double)(Math.PI/2)) + fy * Math.PI;
+                    double latitude = fx * 2 * Math.PI;
+                    double x = r*Math.cos(longtitude)  * Math.cos(latitude);
+                    double y = r*Math.sin(longtitude);
+                    double z = r*Math.cos(longtitude) * Math.sin(latitude);
+                    sphereVertices[verticesIndex] = x;
+                    sphereVertices[verticesIndex+1] = y;
+                    sphereVertices[verticesIndex+2] = z;
+                    sphereVertices[verticesIndex+3] = 1;
+                    sphereVertices[verticesIndex+4] = fx;
+                    sphereVertices[verticesIndex+5] = fy;
+                    verticesIndex+=INITIAL_MESH_STRIDE;
+                }
+            }
+        }
+        int indiceAllocation = m * n * 2 * 3;
+        int[] sphereIndices = new int[indiceAllocation*2];
+        int indicesIndex = 0;
+        for(int i = 0; i < m; i++){
+            for(int j = 0; j < n; j++){
+                if(j >= sphereFilled){
+                    continue;
+                }
+                int p0 = i * (n+1) + j;
+                int p1 = (i+1) * (n+1) + j;
+                int p2 = p1 + 1;
+                int p3 = p0 + 1;
+
+                sphereIndices[indicesIndex] = p0;
+                sphereIndices[indicesIndex+1] = p3;
+                sphereIndices[indicesIndex+2] = p1;
+
+                sphereIndices[indicesIndex+3] = p1;
+                sphereIndices[indicesIndex+4] = p3;
+                sphereIndices[indicesIndex+5] = p2; 
+
+                sphereIndices[indicesIndex+indiceAllocation] = p0+verticeCount;
+                sphereIndices[indicesIndex+indiceAllocation+1] = p1+verticeCount;
+                sphereIndices[indicesIndex+indiceAllocation+2] = p3+verticeCount;
+
+                sphereIndices[indicesIndex+indiceAllocation+3] = p1+verticeCount;
+                sphereIndices[indicesIndex+indiceAllocation+4] = p2+verticeCount;
+                sphereIndices[indicesIndex+indiceAllocation+5] = p3+verticeCount; 
+
+                indicesIndex += 6;
+            }
+        }
+        sphereIndices = Arrays.copyOf(sphereIndices, indicesIndex*2);
         sphereVertices = bakeNormalVectors(sphereVertices, sphereIndices);
         initializeArrays(sphereVertices, sphereIndices);
         initializeVariables();
@@ -358,7 +503,6 @@ public class Entity {
             int frontIndex = i * 3;
             int backStride = (i+triCount);
             int backIndex = backStride * 3;
-            System.out.println("f: " + frontIndex + " b: " + backIndex);
             shapeIndices[frontIndex] = 0;
             shapeIndices[frontIndex+1] = i + 1;
             shapeIndices[frontIndex+2] = i + 2;
@@ -366,11 +510,8 @@ public class Entity {
             shapeIndices[backIndex+1] = i+vertCount+2;
             shapeIndices[backIndex+2] = i+vertCount+1;
         }  
-        System.out.println("indices; " + Arrays.toString(shapeIndices) + " filled: " + totalFrontAndBackTriangles);
         int a = 0, b = vertCount, c = vertCount+1, d = 1;
-        System.out.println("blueprint: " + Arrays.toString(blueprint));
         for(int i = 0; i < vertCount; i++){
-            System.out.println("a: " + a + " b: " +b + " c: " + c + " d: " + d);
             System.arraycopy(blueprint, a*INITIAL_MESH_STRIDE, shapeVertices, verticeIndex, INITIAL_MESH_STRIDE);
             System.arraycopy(blueprint, b*INITIAL_MESH_STRIDE, shapeVertices, verticeIndex+6, INITIAL_MESH_STRIDE);
             System.arraycopy(blueprint, c*INITIAL_MESH_STRIDE, shapeVertices, verticeIndex+12, INITIAL_MESH_STRIDE);
@@ -390,8 +531,6 @@ public class Entity {
             verticeIndex += 24;
             currVertex += 4;
         }
-        System.out.println("indiceIndex: " +indiceIndex + " indices: " + Arrays.toString(shapeIndices));
-        System.out.println("vertices: " + Arrays.toString(shapeVertices));
         return new Entity(shapeVertices, shapeIndices, Matrix.identity());
     }
     void addChild(Entity child){

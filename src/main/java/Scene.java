@@ -28,7 +28,7 @@ public class Scene {
 
     static final int PROCESSED_STRIDE = 3;
 
-    static final int LIGHT_STRIDE = 8;
+    static final int LIGHT_STRIDE = 11;
 
     int entityCount;
     int cameraCount;
@@ -294,6 +294,9 @@ void assignEntitiesToThreads(){
             lightBuffer[index+5] = l.zDir;
             lightBuffer[index+6] = l.intensity;
             lightBuffer[index+7] = l.type;
+            lightBuffer[index+8] = l.r;
+            lightBuffer[index+9] = l.g;
+            lightBuffer[index+10] = l.b;
             currentLight++;
         }
     }

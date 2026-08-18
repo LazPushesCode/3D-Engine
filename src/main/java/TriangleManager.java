@@ -36,7 +36,7 @@ public class TriangleManager {
             boolean clip = false;
             for(int p = 0; p < 6; p++){
                 int pointsOutsidePlane = 0;
-                for(int j = i; j < (i+4); j++){
+                for(int j = i; j < (i+3); j++){
                     int index = validIndices[j]*Scene.STRIDE;
                     double xm = s.globalVertices[index];
                     double ym = s.globalVertices[index+y_offset];
@@ -75,11 +75,11 @@ public class TriangleManager {
                             break;
                     }
                 }
-                if(pointsOutsidePlane > 3){
+                if(pointsOutsidePlane == 3){
                     discard = true;
                     break;
                 }
-                if(pointsOutsidePlane >= 0){
+                if(pointsOutsidePlane > 0){
                     clip = true;
                 }
             }

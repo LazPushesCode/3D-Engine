@@ -33,8 +33,13 @@ public class WindowManager {
         panel.requestFocusInWindow();
     }
     void updateScreen(TileManager tm){
-      combineColorBuffers(tm);
-      // populateBuffers();
+      java.util.Arrays.fill(panel.pixels, 0xFF000000);
+      for(Tile t : tm.tiles){
+         int srcPos = 0;
+         int length = t.tileColorBuffer.length;
+         int destPos = (int)(t.tileWidth * (t.yOffset - t.tileLength));
+         System.arraycopy(t.tileColorBuffer,srcPos, panel.pixels, destPos, length);
+      }
       panel.repaint();
     }
     void addInputListener(InputManager input){
@@ -47,7 +52,8 @@ public class WindowManager {
         panel.clear(0xFF000000); // opaque black
     }
     void renderTile(Tile t, Scene s, CameraManager c){
-
+      if(t.id < 3 || t.id > 12)return;
+      
       int y_offset = Scene.Y_OFFSET;
       int z_offset = Scene.Z_OFFSET;
       int w_offset = Scene.W_OFFSET;
@@ -256,6 +262,9 @@ public class WindowManager {
                   double zDir = s.lightBuffer[index + 5];
                   double intensity = s.lightBuffer[index + 6];
                   int type = (int) s.lightBuffer[index + 7];
+                  double lightR = s.lightBuffer[index+8];
+                  double lightG = s.lightBuffer[index+9];
+                  double lightB = s.lightBuffer[index+10];
 
                   directional = (type == Light.DIRECTIONAL);
                   spotlight = (type == Light.SPOTLIGHT);
@@ -301,12 +310,12 @@ public class WindowManager {
 
                   double diffFactor = dotNL * md * intensity;
                   double specFactor = spec * ms * intensity;
-                  diffuseR = r * diffFactor;
-                  diffuseG = g * diffFactor;
-                  diffuseB = b * diffFactor;
-                  specularR = 255 * specFactor;
-                  specularG = 255 * specFactor;
-                  specularB = 255 * specFactor;
+                  diffuseR = r * diffFactor * lightR;
+                  diffuseG = g * diffFactor * lightG;
+                  diffuseB = b * diffFactor * lightB;
+                  specularR = 255 * specFactor * lightR;
+                  specularG = 255 * specFactor * lightG;
+                  specularB = 255 * specFactor * lightB;
 
                   double attenuation = 1;
                   if(!directional){
@@ -345,16 +354,6 @@ public class WindowManager {
             t.tileColorBuffer[pixel] =  (flag) ? 0xFFFF0000 : 0xFF00FF;
          }
       // }
-   }
-   void combineColorBuffers(TileManager tm){
-      // System.arraycopy(windowColorBuffer, 0, panel.pixels, 0, windowColorBuffer.length);
-      
-      for(Tile t : tm.tiles){
-         int srcPos = 0;
-         int length = t.tileColorBuffer.length;
-         int destPos = (int)(t.tileWidth * (t.yOffset - t.tileLength));
-         System.arraycopy(t.tileColorBuffer,srcPos, panel.pixels, destPos, length);
-      }
    }
    // used external resource
    double invSqrt(double x) {

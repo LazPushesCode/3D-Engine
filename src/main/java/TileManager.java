@@ -13,7 +13,7 @@ public class TileManager {
         }
         tileCount = cores;
         tileWidth = wm.width;
-        tileLength = wm.length/cores;
+        tileLength = Math.ceil(wm.length/cores);
         numRows = cores;
         numCols = 1;
         double xOffset = tileWidth;
