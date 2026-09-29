@@ -8,11 +8,6 @@ public class EffectManager {
     static int neighborStrides[];
     static int verticeCount;
 
-    // --- SHARED UV BOUNDARIES ---
-    static final double U_MIN = 0.35;
-    static final double U_MAX = 0.65;
-    static final double V_MIN = 0.35;
-    static final double V_MAX = 0.65;
 
     static double[] boundary;
     static int sides;
@@ -20,44 +15,97 @@ public class EffectManager {
     EffectManager() {}
 
     static void populateBuffers(int k) {
-        // Increased from 32 to 128 to prevent Sutherland-Hodgman clipping overflow
         a = new double[128];
         b = new double[128];
         neighbors = new double[k * 2];
         neighborStrides = new int[k];
     }
-
-    static Entity generateGlassSphere(int m, int n,int numSeeds, int kNeighbors, double outerRadius, double innerRadius, int boundarySides, int uStart, int uEnd, int vStart, int vEnd) {
+    static Entity generateGlassSquare(int numSeeds, int kNeighbors, int boundarySides, double xImpact, double yImpact, double scale, int face, int uStart, int uEnd, int vStart, int vEnd){
+        Entity glassSquare = new Entity();
+        double uMin = (double) uStart / 100;
+        double uMax = (double) uEnd / 100;
+        double vMin = (double) vStart / 100;
+        double vMax = (double) vEnd / 100;
+        double uRadius = (uMax - uMin) * 0.5; 
+        double vRadius = (vMax - vMin) * 0.5;
+        double uImpact = uMin + xImpact * (uMax-uMin);
+        double vImpact = vMin + yImpact * (vMax - vMin);
+        sides = boundarySides;
+        boundary = new double[sides * 2];
+        populateBuffers(kNeighbors);
+        populateBoundary(uImpact, vImpact, uRadius, vRadius);
+        double[] seedVertices = new double[numSeeds * 2];
+        seedVertices[0] = xImpact;
+        seedVertices[1] = yImpact;
+        int index = 2;
+        for(int i = 1; i < numSeeds; i++){
+            double theta = random() * 2 * Math.PI;
+            double radius = Math.pow(random(), 2);
+            double x = uImpact + radius * uRadius * Math.cos(theta);
+            double y = vImpact + radius * vRadius * Math.sin(theta);
+            seedVertices[index]     = Math.min(uMax, Math.max(uMin, x));
+            seedVertices[index + 1] = Math.min(vMax, Math.max(vMin, y));
+            index+=2;
+        }
+        Integer[] sortedIndices = new Integer[numSeeds];
+        for (int i = 0; i < numSeeds; i++) {
+            sortedIndices[i] = i;
+        }
+        Arrays.sort(sortedIndices, (s1, s2) -> {
+            double ax = seedVertices[s1 * 2] - uImpact;
+            double ay = seedVertices[s1 * 2 + 1] - vImpact;
+            double bx = seedVertices[s2 * 2] - uImpact;
+            double by = seedVertices[s2 * 2 + 1] - vImpact;
+            return Double.compare((ax * ax + ay * ay), (bx * bx + by * by));
+        });
+        for (int i = 0; i < numSeeds; i++) {
+            int si = sortedIndices[i];
+            findNeighbors(seedVertices, si, numSeeds, kNeighbors);
+            calculateShardVertices(seedVertices, si, kNeighbors, uMin, uMax, vMin, vMax);
+            
+            Entity shard = projectUVCordsToSquare(seedVertices, si, 1, uImpact, vImpact, face, uMin, uMax, vMin, vMax);
+            if (shard != null) {
+                glassSquare.addChild(shard);
+                shard.setMaterialValues(1, 1, 1);
+            }
+        }
+        Entity unshatteredSquare = new Entity();
+        unshatteredSquare.squareMeshWithBoundingBox(uStart, uEnd, vStart, vEnd);
+        unshatteredSquare.setMaterialValues(1, 1, 1);
+        glassSquare.addChild(unshatteredSquare);
+        double epsilon = 0.0002;
+        Entity gap = fillGapSquare(1, face, uMin-epsilon, uMax+epsilon, vMin-epsilon, vMax+epsilon);
+        gap.setMaterialValues(1, 1, 1);
+        glassSquare.addChild(gap);
+        return glassSquare;
+    }
+    static Entity generateGlassSphere(int m, int n,int numSeeds, int kNeighbors, double outerRadius, double innerRadius, int boundarySides, double xImpact, double yImpact, int uStart, int uEnd, int vStart, int vEnd) {
         Entity glassSphere = new Entity();
         double uMin = (double) uStart / n;
         double uMax = (double) uEnd / n;
         double vMin = (double) vStart / m;
         double vMax = (double) vEnd / m;
-        // Impact at exact center of the UV hole
-        // double xImpact = (uMin + uMax) * 0.5;
-        // double yImpact = (vMin + vMax) * 0.5;
-        double xImpact = 0.5;
-        double yImpact = 0.4;
         double uRadius = (uMax - uMin) * 0.5;
         double vRadius = (vMax - vMin) * 0.5;
         sides = boundarySides;
         boundary = new double[sides*2];
 
+        double uImpact = uMin + xImpact * (uMax-uMin);
+        double vImpact = vMin + yImpact * (vMax - vMin);
         populateBuffers(kNeighbors);
-        populateBoundary(xImpact, yImpact, uRadius, vRadius);
+        populateBoundary(uImpact, vImpact, uRadius, vRadius);
 
         double[] seedVertices = new double[numSeeds * 2];
-        seedVertices[0] = xImpact;
-        seedVertices[1] = yImpact;
+        seedVertices[0] = uImpact;
+        seedVertices[1] = vImpact;
         int index = 2;
 
         for (int i = 1; i < numSeeds; i++) {
             double theta = random() * Math.PI * 2.0;
             double r = Math.pow(random(), 2);
             
-            // Generate seeds bounded strictly within [U_MIN, U_MAX] and [V_MIN, V_MAX]
-            double x = xImpact + r * uRadius * Math.cos(theta);
-            double y = yImpact + r * vRadius * Math.sin(theta);
+            double x = uImpact + r * uRadius * Math.cos(theta);
+            double y = vImpact + r * vRadius * Math.sin(theta);
 
             seedVertices[index]     = Math.min(uMax, Math.max(uMin, x));
             seedVertices[index + 1] = Math.min(vMax, Math.max(vMin, y));
@@ -70,33 +118,34 @@ public class EffectManager {
         }
 
         Arrays.sort(sortedIndices, (s1, s2) -> {
-            double ax = seedVertices[s1 * 2] - xImpact;
-            double ay = seedVertices[s1 * 2 + 1] - yImpact;
-            double bx = seedVertices[s2 * 2] - xImpact;
-            double by = seedVertices[s2 * 2 + 1] - yImpact;
+            double ax = seedVertices[s1 * 2] - uImpact;
+            double ay = seedVertices[s1 * 2 + 1] - vImpact;
+            double bx = seedVertices[s2 * 2] - uImpact;
+            double by = seedVertices[s2 * 2 + 1] - vImpact;
             return Double.compare((ax * ax + ay * ay), (bx * bx + by * by));
         });
+
 
         for (int i = 0; i < numSeeds; i++) {
             int si = sortedIndices[i];
             findNeighbors(seedVertices, si, numSeeds, kNeighbors);
-            calculateShardVerticesS(seedVertices, si, kNeighbors, uMin, uMax, vMin, vMax);
+            calculateShardVertices(seedVertices, si, kNeighbors, uMin, uMax, vMin, vMax);
             
-            // Pass actual sphere radius to match sphereMesh scale
-            Entity shard = projectUVCordsToSphere(seedVertices, si, outerRadius);
+            Entity shard = projectUVCordsToSphere(seedVertices, si, outerRadius, uImpact, vImpact);
             if (shard != null) {
                 glassSphere.addChild(shard);
-                shard.setMaterialValues(1.25, 0, 1);
+                shard.setMaterialValues(1, 1, 1);
             }
         }
-        Entity unshatteredSphere = new Entity();
+        
         double epsilon = 0.0002;
-        Entity gap = fillGap(outerRadius, uMin-epsilon, uMax+epsilon, vMin-epsilon, vMax+epsilon);
-        gap.setMaterialValues(1.25, 0, 1);
+        Entity gap = fillGapSphere(outerRadius, uMin-epsilon, uMax+epsilon, vMin-epsilon, vMax+epsilon);
         glassSphere.addChild(gap);
+        Entity unshatteredSphere = new Entity();
         unshatteredSphere.sphereMesh(m, n, outerRadius, innerRadius, uStart, uEnd, vStart, vEnd);
-        unshatteredSphere.setMaterialValues(1.25, 0, 1);
+        unshatteredSphere.setMaterialValues(1, 1, 1);
         glassSphere.addChild(unshatteredSphere);
+        gap.setMaterialValues(1, 1, 1);
         return glassSphere;
     }
     
@@ -110,7 +159,7 @@ public class EffectManager {
         }
     }
 
-    static void calculateShardVerticesS(double[] seedVertices, int seedIndex, int kNeighbors, double uMin, double uMax, double vMin, double vMax) {
+    static void calculateShardVertices(double[] seedVertices, int seedIndex, int kNeighbors, double uMin, double uMax, double vMin, double vMax) {
         Arrays.fill(a, 0);
         Arrays.fill(b, 0);
         System.arraycopy(boundary, 0, a, 0, sides*2);
@@ -168,20 +217,19 @@ public class EffectManager {
         verticeCount = count;
     }
 
-    static Entity projectUVCordsToSphere(double[] seedVertices, int seedIndex, double radius) {
+    static Entity projectUVCordsToSphere(double[] seedVertices, int seedIndex, double radius, double xImpact, double yImpact) {
         if (verticeCount < 3) return null;
 
         int vertStride = Entity.INITIAL_MESH_STRIDE;
         double[] vertices = new double[verticeCount * 2 * vertStride];
 
         double cx = 0, cy = 0, cz = 0;
-        double thickness = 0.001; // Slightly thicker edge so shards are clearly visible
+        double thickness = 0.001;
 
         for (int i = 0; i < verticeCount; i++) {
             double u = a[i * 2];
             double v = a[i * 2 + 1];
 
-            // --- MATCHES SPHEREMESH TRIG EXACTLY ---
             double longitude = -(Math.PI / 2.0) + v * Math.PI;
             double latitude  = u * 2.0 * Math.PI;
 
@@ -220,7 +268,67 @@ public class EffectManager {
         cy /= totalVerts;
         cz /= totalVerts;
 
-        // Shift vertices around shard center of mass so they don't orbit during transformations
+        for (int i = 0; i < totalVerts; i++) {
+            int index = i * vertStride;
+            vertices[index]     -= cx;
+            vertices[index + 1] -= cy;
+            vertices[index + 2] -= cz;
+        }
+        Entity shard = Entity.generateFlat3DShape(vertices, verticeCount);
+        shard.setWorldPosition(cx, cy, cz);
+        return shard;
+    }
+    static Entity projectUVCordsToSquare(double[] seedVertices, int seedIndex, double sideLength, double xImpact, double yImpact, int face, double uMin, double uMax, double vMin, double vMax) {
+        if (verticeCount < 3) return null;
+
+        int vertStride = Entity.INITIAL_MESH_STRIDE;
+        double[] vertices = new double[verticeCount * 2 * vertStride];
+
+        double cx = 0, cy = 0, cz = 0;
+        double thickness = 0.001;
+
+        for (int i = 0; i < verticeCount; i++) {
+            double u = a[i * 2];
+            double v = a[i * 2 + 1];
+            double nx = 0, ny = 0, nz = 0, px = 0, py = 0, pz = 0;
+            double uLocal = (u - 0.5) * sideLength;
+            double vLocal = (v - 0.5) * sideLength;
+
+            double frontX = px + nx * (thickness * 0.5);
+            double frontY = py + ny * (thickness * 0.5);
+            double frontZ = pz + nz * (thickness * 0.5);
+
+            double backX = px - nx * (thickness * 0.5);
+            double backY = py - ny * (thickness * 0.5);
+            double backZ = pz - nz * (thickness * 0.5);
+
+            cx += frontX + backX;
+            cy += frontY + backY;
+            cz += frontZ + backZ;
+
+            int index = i * vertStride;
+            int halfway = (i + verticeCount) * vertStride;
+
+            vertices[index]     = uLocal; 
+            vertices[index + 1] = vLocal; 
+            vertices[index + 2] = 0;
+            vertices[index + 3] = 1.0;   
+            vertices[index + 4] = u;  
+            vertices[index + 5] = v;
+
+            vertices[halfway] = uLocal; 
+            vertices[halfway + 1] = vLocal; 
+            vertices[halfway + 2] = 0;
+            vertices[halfway + 3] = 1.0;   
+            vertices[halfway + 4] = u;      
+            vertices[halfway + 5] = v;
+        }
+
+        int totalVerts = verticeCount * 2;
+        cx /= totalVerts;
+        cy /= totalVerts;
+        cz /= totalVerts;
+
         for (int i = 0; i < totalVerts; i++) {
             int index = i * vertStride;
             vertices[index]     -= cx;
@@ -230,7 +338,6 @@ public class EffectManager {
 
         Entity shard = Entity.generateFlat3DShape(vertices, verticeCount);
         shard.setWorldPosition(cx, cy, cz);
-
         return shard;
     }
     static double[] getGapVertices(double uMin, double uMax, double vMin, double vMax){
@@ -344,7 +451,42 @@ public class EffectManager {
         if(u >= uMid && v >= vMid) return 2;
         return 3;
     }
-    static Entity fillGap(double radius, double uMin, double uMax, double vMin, double vMax){
+    static Entity fillGapSquare(double sideLength, int face, double uMin, double uMax, double vMin, double vMax){
+        double[] uvcords = getGapVertices(uMin, uMax, vMin, vMax);
+        uvcords = subdivideTriangles(uvcords, 4);
+        int vertCount = uvcords.length / 2;
+        double[] vertices = new double[vertCount * Entity.LOCAL_MESH_STRIDE];
+        int[] indices = new int[vertCount];
+        for(int i = 0; i < vertCount; i++){
+            double u = uvcords[i*2];
+            double v = uvcords[i*2+1];
+            double nx = 0, ny = 0, nz = -1, px = 0, py = 0, pz = 0;
+            double uLocal = (u - 0.5) * sideLength;
+            double vLocal = (v - 0.5) * sideLength;
+            
+            int vertIndex = i * Entity.LOCAL_MESH_STRIDE;
+            vertices[vertIndex] = uLocal;
+            vertices[vertIndex + 1] = vLocal;
+            vertices[vertIndex + 2] = 0;
+            vertices[vertIndex + 3] = 1;
+            vertices[vertIndex + 4] = u;
+            vertices[vertIndex + 5] = v;
+            vertices[vertIndex + 6] = -nx;
+            vertices[vertIndex + 7] = -ny;
+            vertices[vertIndex + 8] = -nz;
+        }
+        for (int i = 0; i < vertCount; i += 3) {
+            indices[i]     = i;
+            indices[i + 1] = i + 2; 
+            indices[i + 2] = i + 1;
+        }
+        Entity gap = new Entity();
+        gap.initializeArrays(vertices,indices);
+        gap.initializeVariables();
+        gap.transformation = Matrix.identity();
+        return gap;
+    }
+    static Entity fillGapSphere(double radius, double uMin, double uMax, double vMin, double vMax){
         double[] uvcords = getGapVertices(uMin, uMax, vMin, vMax);
         uvcords = subdivideTriangles(uvcords, 4);
         int vertCount = uvcords.length / 2;
@@ -433,6 +575,55 @@ public class EffectManager {
                     break;
                 }
             }
+        }
+    }
+    static void assignVideo(Entity et, int row, int col, int totalRow, int totalCol) {
+        int vc = et.vertices.length / Entity.LOCAL_MESH_STRIDE;
+        double xMin = Double.POSITIVE_INFINITY;
+        double xMax = Double.NEGATIVE_INFINITY;
+        double yMin = Double.POSITIVE_INFINITY;
+        double yMax = Double.NEGATIVE_INFINITY;
+        double zMin = Double.POSITIVE_INFINITY;
+        double zMax = Double.NEGATIVE_INFINITY;
+
+        for(int i = 0; i < vc; i++){
+            int index = i * Entity.LOCAL_MESH_STRIDE;
+            double x = et.vertices[index];
+            double y = et.vertices[index+1];
+            double z = et.vertices[index+2];
+            if(x < xMin) xMin = x;
+            if(x > xMax) xMax = x;
+            if(y < yMin) yMin = y;
+            if(y > yMax) yMax = y;
+            if(z < zMin) zMin = z;
+            if(z > zMax) zMax = z;
+        }
+        double width = xMax - xMin;
+        double length = yMax - yMin;
+        double depth = zMax - zMin;
+
+        for(int i = 0; i < vc; i++){
+            int index = i * Entity.LOCAL_MESH_STRIDE;
+
+            double u,v;
+
+            if(depth > width && depth > length){
+                u = (depth == 0) ? 0 : (et.vertices[index+2] - zMin) / depth;
+                v = (depth == 0) ? 0 : (et.vertices[index+1] - yMin) / length;
+            } else if(width >= length){
+                u = (width == 0) ? 0 : (et.vertices[index] - xMin) / width;
+                v = (width == 0) ? 0 : (et.vertices[index+1] - yMin) / length;
+            } else {
+                u = (length == 0) ? 0 : (et.vertices[index] - xMin) / width;
+                v = (length == 0) ? 0 : (et.vertices[index+2] - zMin) / depth;
+            }
+
+
+            et.vertices[index+4] = (u + col ) / totalCol;
+            et.vertices[index+5] = (v + row) / totalRow;
+
+            
+            
         }
     }
 

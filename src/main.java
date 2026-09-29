@@ -1,5 +1,3 @@
-
-import static java.lang.Math.random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -14,75 +12,38 @@ public class main{
 
         Texture grassblock = new Texture("C:\\Users\\lazar\\3D-Engine\\resources\\assets\\11635.png");
         Texture temp = new Texture("C:\\Users\\lazar\\3D-Engine\\resources\\assets\\L.png");
+        Texture gridTexture = new Texture("C:\\Users\\lazar\\3D-Engine\\resources\\assets\\grid0.png");
        
-        cm.setCameraPosition(0, 0, -2);
-
-        cm.yaw-=90;
-        cm.setCameraPosition(-10, 1, -2);
+        cm.setCameraPosition(0, 0, 0);
 
         wm.openWindow();
         wm.addInputListener(im);
 
-        VideoDecoder vd = new VideoDecoder("C:\\Users\\lazar\\3D-Engine\\resources\\assets\\0815.mp4");
-        VideoDecoder moonvid = new VideoDecoder("C:\\Users\\lazar\\3D-Engine\\resources\\assets\\moonv2.mp4");
-        VideoDecoder staticwhite = new VideoDecoder("C:\\Users\\lazar\\3D-Engine\\resources\\assets\\staticwhite.mp4");
-
         Scene world = new Scene();
         world.addCamera(cm);
+
+        Entity cube = new Entity();
+        cube.cubeMesh(false);
+        world.addEntity(cube);
+        cube.scale(1,1,1);
+
+        Animation anitest = new Animation();
+        anitest.createKeyFrame(10, 0, 0 , 180, 180, 180, 0, 0, 0, 5000);
+        anitest.createKeyFrame(0, 10, 0 , 0, 0, 0, 0, 0, 0, 10000);
         
+        world.ambience = 1;
 
-
-        world.ambience = 0.1;
-        int scale = 15;
-
-        // Entity moonBackground = new Entity();
-        // moonBackground.cubeMesh(true);
-        // world.addEntity(moonBackground);
-        // moonBackground.applyMP4(moonvid);
-        // moonBackground.scale(50, 50, 50);
-        // moonBackground.translate(0, 5, 0);
-        // moonBackground.rotateyWorld(-90);
-
-        // Entity glassSphere = EffectManager.generateGlassSphere(100, 100, 2500, 500, 1, 1, 20, 80, 0, 80);
-        Entity glassSphere = EffectManager.generateGlassSphere(100, 100, 2500, 500, 1, 1, 24, 45, 55, 35, 45);
-        world.addEntityChildren(glassSphere);
-        double iterator = 0;
-        for(Entity e : glassSphere.children.values()){
-            e.applyMP4(staticwhite);
-        }
-        glassSphere.scale(scale, scale, scale);
-        glassSphere.rotatexWorld(180);
-
-        
-        int numShards = 1500;
-        double[] speed = new double [numShards];
-        for(int i = 0; i < numShards-1; i++){
-            double random = 0.0001 - (random()*0.0002);
-            speed[i] = random;
-            // glassSphere.children.get(i).applyTexture(grassblock);
-        }
-        
-
-        Light wl = new Light(0 , 0, 0);
-        wl.setPoint();
-        wl.setIntensity(6);
-        world.addLight(wl);
-
-        // Entity normalSphere = new Entity();
-        // normalSphere.sphereMesh(100, 100, 1, 1, 0, 0, 0, 0);
-        // normalSphere.scale(scale, scale, scale);
-        // normalSphere.applyMP4(staticwhite);
-        // world.addEntity(normalSphere);
-
-        
-
-        
         long currentTime = (System.currentTimeMillis());
         long previousTime = 0;
 
         double deltaTime = 0;
         world.bindVertices();
         world.initializeGlobalIndices();
+
+        ParticleSystem stars = new ParticleSystem();
+        stars.initializeSystem(0,0,0,10000, 1, 10000, 10000,10000);
+        world.addParticleSystem(stars);
+        stars.setColor(255, 255, 255);
 
         ExecutorService tilePool = Executors.newFixedThreadPool(cores);
 
@@ -102,29 +63,24 @@ public class main{
         long timeScreen = 0;
         boolean flip = true;
 
-while(true){
-    try{
-        deltaTime = (currentTime - previousTime)%1000;
+        long totalTime = 0;
+
+    while(true){
+        try{
+            deltaTime = (currentTime - previousTime)%1000;
+            totalTime += deltaTime;
+            long start = System.nanoTime();
+            cm.pollInput(im, wm, deltaTime);
+            cm.updateCameraMatrix();
+            timeInput += (System.nanoTime() - start);
+
         
-        // staticwhite.update();
-
-        // normalSphere.applyMP4(staticwhite);
-
-        long start = System.nanoTime();
-        cm.pollInput(im, wm, deltaTime);
-        cm.updateCameraMatrix();
-        timeInput += (System.nanoTime() - start);
-
-        glassSphere.applyTransformationValues();
-        double num = 0;
-           for(int i = numShards-1; i >= 0; i--){
-               glassSphere.children.get(i).translate(-num*deltaTime, 0, 0);
-               glassSphere.children.get(i).rotatexLocal(speed[i]*deltaTime).rotateyLocal(speed[i]*deltaTime);
-               num -= 0.0000001;
-        }
-
         start = System.nanoTime();
+
+        if(!anitest.lockAnimation)anitest.playAnimation(cube, totalTime);
+        // System.out.println("x: " + cube.x);
         world.assignEntitiesToThreads();
+        world.updateEntityTransformations();
         world.entityConversions();
         world.fillLightBuffer();
         world.applyLightRotations();
@@ -141,6 +97,11 @@ while(true){
         start = System.nanoTime();
         tm.assignTrianglesToTiles(world, wm);
         timeAssign += (System.nanoTime() - start);
+
+        world.convertParticlesToClipSpace(cm, wm.width, wm.length);
+        tm.tiles.parallelStream().forEach(tile -> {
+            wm.renderParticlesOnTile(tile, world);
+        });
 
         start = System.nanoTime();
         tm.tiles.parallelStream().forEach(tile -> {

@@ -52,7 +52,7 @@ public class WindowManager {
         panel.clear(0xFF000000); // opaque black
     }
     void renderTile(Tile t, Scene s, CameraManager c){
-      if(t.id < 3 || t.id > 12)return;
+      // if(t.id < 3 || t.id > 12)return;
       
       int y_offset = Scene.Y_OFFSET;
       int z_offset = Scene.Z_OFFSET;
@@ -162,8 +162,18 @@ public class WindowManager {
 
                     if (xLocal >= 0 && xLocal < tileW && yLocal >= 0 && yLocal < tileL) {
                         int pixel = yLocal * tileW + xLocal;
-
-                        if (depth >= t.tileDepthBuffer[pixel]) {
+                        
+                        boolean pass;
+                        if(e.prioritize){
+                           if(t.tilePrioritize[pixel] == 1){
+                              pass = (depth >= t.tileDepthBuffer[pixel]);
+                           } else {
+                              pass = true;
+                           }
+                        } else {
+                           pass = (depth >= t.tileDepthBuffer[pixel] && t.tilePrioritize[pixel] != 1);
+                        }
+                        if (pass) {
                             double invW = 1.0 / wInterpolated;
                             double wx = (b0 * wx0 + b1 * wx1 + b2 * wx2) * invW;
                             double wy = (b0 * wy0 + b1 * wy1 + b2 * wy2) * invW;
@@ -211,134 +221,153 @@ public class WindowManager {
             int g = (int)(((color >> 8) & 0xFF));
             int b = (int)((color & 0xFF));
             double ambience = s.ambience;
-            double additiveR = r * ambience;
-            double additiveG = g * ambience;
-            double additiveB = b * ambience;
+            double additiveR, additiveG, additiveB;
             
-
-            if(s.lights != null){
-               if (e.greenScreen && g > 150 && r < 100 && b < 100) {
-                  return;
-               }
-
-               boolean directional;
-               boolean spotlight;
-
-               double cx = c.x;
-               double cy = c.y;
-               double cz = c.z;
-
-               double vx = cx - wx;
-               double vy = cy - wy;
-               double vz = cz - wz;
-
-               double vMagnitude = invSqrt(vx*vx + vy*vy + vz*vz);
-               if(vMagnitude > 0){
-                  vx *= vMagnitude;
-                  vy *= vMagnitude;
-                  vz *= vMagnitude; 
-               }
-               double md = e.materialDiffuse;
-               double ms = e.materialSpecular;
-
-               double diffuseR;
-               double diffuseG;
-               double diffuseB;
-               double specularR;
-               double specularG;
-               double specularB;
-               
-               int lightCount = s.lightCount;
-
-               if(u < 0 || v < 0)return;
-
-               for(int l = 0; l < lightCount; l++){
-                  int index = s.LIGHT_STRIDE * l;
-                  double xPos = s.lightBuffer[index + 0];
-                  double yPos = s.lightBuffer[index + 1];
-                  double zPos = s.lightBuffer[index + 2];
-                  double xDir = s.lightBuffer[index + 3];
-                  double yDir = s.lightBuffer[index + 4];
-                  double zDir = s.lightBuffer[index + 5];
-                  double intensity = s.lightBuffer[index + 6];
-                  int type = (int) s.lightBuffer[index + 7];
-                  double lightR = s.lightBuffer[index+8];
-                  double lightG = s.lightBuffer[index+9];
-                  double lightB = s.lightBuffer[index+10];
-
-                  directional = (type == Light.DIRECTIONAL);
-                  spotlight = (type == Light.SPOTLIGHT);
-
-                  double dx = xDir;
-                  double dy = yDir;
-                  double dz = zDir;
-                  double lx, ly, lz;
-
-                  lx = (directional) ? -dx : (xPos - wx);
-                  ly = (directional) ? -dy : (yPos - wy);
-                  lz = (directional) ? -dz : (zPos - wz);
-                  double lMagnitude = invSqrt(lx*lx + ly*ly + lz*lz);
-                  if(lMagnitude > 0){
-                     lx *= lMagnitude;
-                     ly *= lMagnitude;
-                     lz *= lMagnitude;
-                  }
-                  lMagnitude = 1 / lMagnitude;
-
-                  double dotNL = Math.max(0.0, (nx * lx) + (ny * ly) + (nz * lz));
-                  if(dotNL <= 0)continue;
-
-                  double hx = lx + vx;
-                  double hy = ly + vy;
-                  double hz = lz + vz;
-
-                  double magnitude = invSqrt(hx*hx + hy*hy + hz*hz);
-                  if(magnitude > 0){
-                     hx *= magnitude;
-                     hy *= magnitude;
-                     hz *= magnitude;
+            if(e.affectedByLight){
+               additiveR =  r * ambience;
+               additiveG = g * ambience;
+               additiveB = b * ambience;
+               if(s.lights != null){
+                  if (e.greenScreen) {
+                     if(g > r * 1.2 && g > b * 1.2 && g > 40){
+                        return;
+                     }
+                     if(g > r && g > b){
+                        g = Math.max(r, b);
+                     }
                   }
 
-                  double dotNH = Math.max(0.0, (nx * hx) + (ny * hy) + (nz * hz));
-                  double spec = 0;
-                  if(e.materialSpecular > 0 && dotNL > 0){
-                     double sp2 = dotNH * dotNH;
-                     double sp4 = sp2 * sp2;
-                     double sp16 = sp4 * sp4;
-                     spec = sp16 * sp16;
-                  }
+                  boolean directional;
+                  boolean spotlight;
 
-                  double diffFactor = dotNL * md * intensity;
-                  double specFactor = spec * ms * intensity;
-                  diffuseR = r * diffFactor * lightR;
-                  diffuseG = g * diffFactor * lightG;
-                  diffuseB = b * diffFactor * lightB;
-                  specularR = 255 * specFactor * lightR;
-                  specularG = 255 * specFactor * lightG;
-                  specularB = 255 * specFactor * lightB;
+                  double cx = c.x;
+                  double cy = c.y;
+                  double cz = c.z;
 
-                  double attenuation = 1;
-                  if(!directional){
-                     double constant = 1;
-                     double linear = 0.05;
-                     double quadratic = 0.03;
-                     attenuation = (1.0)/(constant + (linear * lMagnitude) + (quadratic * lMagnitude * lMagnitude));
+                  double vx = cx - wx;
+                  double vy = cy - wy;
+                  double vz = cz - wz;
+
+                  double vMagnitude = invSqrt(vx*vx + vy*vy + vz*vz);
+                  if(vMagnitude > 0){
+                     vx *= vMagnitude;
+                     vy *= vMagnitude;
+                     vz *= vMagnitude; 
                   }
+                  double md = e.materialDiffuse;
+                  double ms = e.materialSpecular;
+
+                  double diffuseR;
+                  double diffuseG;
+                  double diffuseB;
+                  double specularR;
+                  double specularG;
+                  double specularB;
                   
-                  double spotIntensity = 1;
-                  if(spotlight){
-                     double angle = (dx * -lx) + (dy * -ly ) + (dz * -lz);
-                     double innerCutOff = 0.5;
-                     double outerCutOff = .4;
-                     double epsilon = innerCutOff - outerCutOff;
-                     double inten = (angle - outerCutOff) / epsilon;
-                     spotIntensity = Math.max(0, Math.min(1.0, inten));
-                  }
-                  additiveR += (diffuseR + specularR) * attenuation * spotIntensity;
-                  additiveG += (diffuseG + specularG) * attenuation * spotIntensity;
-                  additiveB += (diffuseB + specularB) * attenuation * spotIntensity;
+                  int lightCount = s.lightCount;
+
+                  if(u < 0 || v < 0)return;
+
+                  for(int l = 0; l < lightCount; l++){
+                     int index = s.LIGHT_STRIDE * l;
+                     double xPos = s.lightBuffer[index + 0];
+                     double yPos = s.lightBuffer[index + 1];
+                     double zPos = s.lightBuffer[index + 2];
+                     double xDir = s.lightBuffer[index + 3];
+                     double yDir = s.lightBuffer[index + 4];
+                     double zDir = s.lightBuffer[index + 5];
+                     double intensity = s.lightBuffer[index + 6];
+                     int type = (int) s.lightBuffer[index + 7];
+                     double lightR = s.lightBuffer[index+8];
+                     double lightG = s.lightBuffer[index+9];
+                     double lightB = s.lightBuffer[index+10];
+
+                     directional = (type == Light.DIRECTIONAL);
+                     spotlight = (type == Light.SPOTLIGHT);
+
+                     double dx = xDir;
+                     double dy = yDir;
+                     double dz = zDir;
+                     double lx, ly, lz;
+
+                     lx = (directional) ? -dx : (xPos - wx);
+                     ly = (directional) ? -dy : (yPos - wy);
+                     lz = (directional) ? -dz : (zPos - wz);
+                     double lMagnitude = invSqrt(lx*lx + ly*ly + lz*lz);
+                     if(lMagnitude > 0){
+                        lx *= lMagnitude;
+                        ly *= lMagnitude;
+                        lz *= lMagnitude;
+                     }
+                     lMagnitude = 1 / lMagnitude;
+
+                     double dotNL = Math.max(0.0, (nx * lx) + (ny * ly) + (nz * lz));
+                     if(dotNL <= 0)continue;
+
+                     double hx = lx + vx;
+                     double hy = ly + vy;
+                     double hz = lz + vz;
+
+                     double magnitude = invSqrt(hx*hx + hy*hy + hz*hz);
+                     if(magnitude > 0){
+                        hx *= magnitude;
+                        hy *= magnitude;
+                        hz *= magnitude;
+                     }
+
+                     double dotNH = Math.max(0.0, (nx * hx) + (ny * hy) + (nz * hz));
+                     double spec = 0;
+                     if(e.materialSpecular > 0 && dotNL > 0){
+                        double sp2 = dotNH * dotNH;
+                        double sp4 = sp2 * sp2;
+                        double sp16 = sp4 * sp4;
+                        spec = sp16 * sp16;
+                     }
+
+                     double diffFactor = dotNL * md * intensity;
+                     double specFactor = spec * ms * intensity;
+                     diffuseR = r * diffFactor * lightR;
+                     diffuseG = g * diffFactor * lightG;
+                     diffuseB = b * diffFactor * lightB;
+                     specularR = 255 * specFactor * lightR;
+                     specularG = 255 * specFactor * lightG;
+                     specularB = 255 * specFactor * lightB;
+
+                     double attenuation = 1;
+                     if(!directional){
+                        double constant = 1;
+                        double linear = 0.05;
+                        double quadratic = 0.03;
+                        attenuation = (1.0)/(constant + (linear * lMagnitude) + (quadratic * lMagnitude * lMagnitude));
+                     }
+                     
+                     double spotIntensity = 1;
+                     if(spotlight){
+                        double angle = (dx * -lx) + (dy * -ly ) + (dz * -lz);
+                        double innerCutOff = 0.5;
+                        double outerCutOff = .4;
+                        double epsilon = innerCutOff - outerCutOff;
+                        double inten = (angle - outerCutOff) / epsilon;
+                        spotIntensity = Math.max(0, Math.min(1.0, inten));
+                     }
+                     additiveR += (diffuseR + specularR) * attenuation * spotIntensity;
+                     additiveG += (diffuseG + specularG) * attenuation * spotIntensity;
+                     additiveB += (diffuseB + specularB) * attenuation * spotIntensity;
                   
                }
+            }
+            } else {
+               if (e.greenScreen) {
+                     if(g > r * 1.2 && g > b * 1.2 && g > 40){
+                        return;
+                     }
+                     if(g > r && g > b){
+                        g = Math.max(r, b);
+                     }
+                  }
+               additiveR =  r;
+               additiveG = g;
+               additiveB = b;
             }
             int finalR = (int) Math.max(0, Math.min(255, additiveR));
             int finalG = (int) Math.max(0, Math.min(255, additiveG));
@@ -348,12 +377,53 @@ public class WindowManager {
 
             t.tileDepthBuffer[pixel] = (float)z;
             t.tileColorBuffer[pixel] = color;
+            if(e.prioritize) t.tilePrioritize[pixel] = 1;
 
          } else {
             t.tileDepthBuffer[pixel] = (float)z;
             t.tileColorBuffer[pixel] =  (flag) ? 0xFFFF0000 : 0xFF00FF;
+            if(e.prioritize) t.tilePrioritize[pixel] = 1;
          }
-      // }
+      
+   }
+   void renderParticlesOnTile(Tile t, Scene s){
+      // if(t.id < 3 || t.id > 12)return;
+      int tileW = (int) t.tileWidth;
+      int tileL = (int) t.tileLength;
+      int xMinTile = (int) (t.xOffset - tileW);
+      int xMaxTile = (int) t.xOffset;
+      int yMinTile = (int) (t.yOffset - tileL);
+      int yMaxTile = (int) t.yOffset;
+      for(ParticleSystem ps : s.particleSystems.values()){
+         
+         for(int i = 0; i < ps.particleCount; i++){
+            if(!ps.visible[i]) continue;
+            int pIndex = i * 3;
+            int xCenter = (int) ps.projected[pIndex];
+            int yCenter = (int) ps.projected[pIndex+1];
+            double pz =  ps.projected[pIndex+2];
+            int radius = ps.dynamicSize[i];
+            if(xCenter+radius < xMinTile && xCenter-radius >= xMaxTile 
+               && yCenter+radius < yMinTile && yCenter-radius >= yMaxTile) continue;
+            
+            for(int dy = -radius; dy <= radius; dy++){
+               int py = yCenter + dy;
+               if(py < yMinTile || py >= yMaxTile) continue;
+               for(int dx = -radius; dx <= radius; dx++){
+                  int px = xCenter + dx;
+                  if(px < xMinTile || px >= xMaxTile) continue;
+                  int xLocal = px - xMinTile;
+                  int yLocal = py - yMinTile;
+                  int pixelIndex = yLocal * tileW + xLocal;
+                  if(pz >= t.tileDepthBuffer[pixelIndex]){
+                     t.tileDepthBuffer[pixelIndex] = (float)pz;
+                     int color = 0xFF000000 | (ps.r << 16) | (ps.g << 8) | ps.b;
+                     t.tileColorBuffer[pixelIndex] = color;
+                  } 
+               }
+            }
+         }
+      }
    }
    // used external resource
    double invSqrt(double x) {

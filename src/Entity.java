@@ -38,6 +38,11 @@ public class Entity {
     static final int INITIAL_MESH_STRIDE = 6;
     static final int LOCAL_MESH_STRIDE = 9;
 
+    boolean backFaceCulling;
+    boolean prioritize;
+    boolean affectedByLight;
+    
+
 
     Entity(){
         initializeVariables();
@@ -67,6 +72,9 @@ public class Entity {
         materialSpecular = 0.5;
         materialShininess = 64;
         greenScreen = false;
+        backFaceCulling = true;
+        prioritize = false;
+        affectedByLight = true;
         childrenCount = 0;
         children = new HashMap<>();
     }
@@ -75,19 +83,13 @@ public class Entity {
         materialSpecular = spec;
         materialShininess = shiny;
     }
-    void applyTransformationValues(){
-
-        Matrix T = Matrix.Translate(x, y, z);
-        Matrix R = Matrix.Rotate(orientation);
-        Matrix S = Matrix.Scale(xSize, ySize, zSize);
-        transformation = T.multiply(R.multiply(S));
-
-        // transformation = Matrix.Translate(x, y, z)
-        // .multiply(Matrix.Rotate(orientation)
-        // .multiply(Matrix.Scale(xSize, ySize, zSize)));
-
-        if(parent != null){
-            transformation = parent.transformation.multiply(transformation);
+    void updateTransformations(Matrix parentMatrix){
+        Matrix local = Matrix.Translate(x,y,z)
+        .multiply(Matrix.Rotate(orientation))
+        .multiply(Matrix.Scale(xSize, ySize, zSize));
+        this.transformation = (parentMatrix != null) ? parentMatrix.multiply(local) : local;
+        for(Entity child : children.values()){
+            child.updateTransformations(this.transformation);
         }
     }
     void applyTexture(Texture texture){
@@ -95,15 +97,6 @@ public class Entity {
         textureWidth = texture.width;
         textureBuffer = texture.buffer;
         hasTexture = true;
-    }
-    void applyMP4(VideoDecoder vd){
-        textureHeight = vd.getHeight();
-        textureWidth = vd.getWidth();
-        textureBuffer = vd.getFrameBuffer();
-        hasTexture = true;
-    }
-    void applyNewMP4Frame(int[] buffer){
-        textureBuffer = buffer;
     }
     void setTexture(BufferedImage t){
         try{
@@ -119,6 +112,173 @@ public class Entity {
     void initializeArrays(double [] givenVertices, int [] givenIndices){
         vertices = givenVertices;
         indices = givenIndices;
+    }
+     void generateGrid(int rows, int columns, int depth){
+        double rowIterator = (double) 1 / rows;
+        double colIterator = (double) 1 / columns;
+        double depthIterator = (double) 1 / depth;
+        int rowVerticeMemory = rows*10*4*INITIAL_MESH_STRIDE;
+        int colVerticeMemory = columns*10*4*INITIAL_MESH_STRIDE;
+        int depthVerticeMemory = depth*10*4*INITIAL_MESH_STRIDE; 
+        int rowIndiceMemory = rows*10*6;
+        int colIndiceMemory = columns*10*6;
+        int depthIndiceMemory = depth*10*6;
+        double[] gridVertices = new double[rowVerticeMemory+colVerticeMemory+depthVerticeMemory];
+        int[] gridIndices = new int[rowIndiceMemory+colIndiceMemory+ depthIndiceMemory];
+        int vertIdx = 0;
+        int indiceIdx = 0;
+        double xCurr = -0.5;
+        double yCurr = -0.5;
+        double zCurr = -0.5;
+        double thickness = 0.001;
+        for(int i = 0; i < depth; i++){
+            for(int j = 0; j < rows; j++){
+                int baseVert = vertIdx / INITIAL_MESH_STRIDE;
+
+                gridVertices[vertIdx++] = -0.5;
+                gridVertices[vertIdx++] = yCurr;
+                gridVertices[vertIdx++] = zCurr;
+                gridVertices[vertIdx++] = 1;
+                gridVertices[vertIdx++] = 0;
+                gridVertices[vertIdx++] = 0;
+
+                gridVertices[vertIdx++] = -0.5;
+                gridVertices[vertIdx++] = yCurr + thickness;
+                gridVertices[vertIdx++] = zCurr;
+                gridVertices[vertIdx++] = 1;
+                gridVertices[vertIdx++] = 0;
+                gridVertices[vertIdx++] = 0;
+
+                gridVertices[vertIdx++] = 0.5;
+                gridVertices[vertIdx++] = yCurr + thickness;
+                gridVertices[vertIdx++] = zCurr;
+                gridVertices[vertIdx++] = 1;
+                gridVertices[vertIdx++] = 0;
+                gridVertices[vertIdx++] = 0;
+
+                gridVertices[vertIdx++] = 0.5;
+                gridVertices[vertIdx++] = yCurr;
+                gridVertices[vertIdx++] = zCurr;
+                gridVertices[vertIdx++] = 1;
+                gridVertices[vertIdx++] = 0;
+                gridVertices[vertIdx++] = 0;
+
+
+                gridIndices[indiceIdx++] = baseVert;
+                gridIndices[indiceIdx++] = baseVert+1;
+                gridIndices[indiceIdx++] = baseVert+2;
+
+                gridIndices[indiceIdx++] = baseVert;
+                gridIndices[indiceIdx++] = baseVert+2;
+                gridIndices[indiceIdx++] = baseVert+3;
+
+                yCurr+= rowIterator;
+            }
+            zCurr += depthIterator;
+            yCurr = -0.5;
+        }
+        zCurr = -0.5;
+        for(int i = 0; i < depth; i++){
+            for(int j = 0; j < columns; j++){
+                int baseVert = vertIdx / INITIAL_MESH_STRIDE;
+
+                gridVertices[vertIdx++] = xCurr;
+                gridVertices[vertIdx++] = -0.5;
+                gridVertices[vertIdx++] = zCurr;
+                gridVertices[vertIdx++] = 1;
+                gridVertices[vertIdx++] = 0;
+                gridVertices[vertIdx++] = 0;
+
+                gridVertices[vertIdx++] = xCurr;
+                gridVertices[vertIdx++] = 0.5;
+                gridVertices[vertIdx++] = zCurr;
+                gridVertices[vertIdx++] = 1;
+                gridVertices[vertIdx++] = 0;
+                gridVertices[vertIdx++] = 0;
+
+                gridVertices[vertIdx++] = xCurr+thickness;
+                gridVertices[vertIdx++] = 0.5;
+                gridVertices[vertIdx++] = zCurr;
+                gridVertices[vertIdx++] = 1;
+                gridVertices[vertIdx++] = 0;
+                gridVertices[vertIdx++] = 0;
+
+                gridVertices[vertIdx++] = xCurr+thickness;
+                gridVertices[vertIdx++] = -0.5;
+                gridVertices[vertIdx++] = zCurr;
+                gridVertices[vertIdx++] = 1;
+                gridVertices[vertIdx++] = 0;
+                gridVertices[vertIdx++] = 0;
+
+
+                gridIndices[indiceIdx++] = baseVert;
+                gridIndices[indiceIdx++] = baseVert+1;
+                gridIndices[indiceIdx++] = baseVert+2;
+
+                gridIndices[indiceIdx++] = baseVert;
+                gridIndices[indiceIdx++] = baseVert+2;
+                gridIndices[indiceIdx++] = baseVert+3;
+
+                xCurr+= colIterator;
+            }
+            zCurr += depthIterator;
+            xCurr = -0.5;
+        }
+        yCurr = -0.5;
+        zCurr = -0.5;
+        for(int i = 0; i < rows; i++){
+            for(int j = 0; j < depth; j++){
+                int baseVert = vertIdx / INITIAL_MESH_STRIDE;
+
+                gridVertices[vertIdx++] = zCurr;
+                gridVertices[vertIdx++] = yCurr;
+                gridVertices[vertIdx++] = -0.5;
+                gridVertices[vertIdx++] = 1;
+                gridVertices[vertIdx++] = 0;
+                gridVertices[vertIdx++] = 0;
+
+                gridVertices[vertIdx++] = zCurr+thickness;
+                gridVertices[vertIdx++] = yCurr;
+                gridVertices[vertIdx++] = -0.5;
+                gridVertices[vertIdx++] = 1;
+                gridVertices[vertIdx++] = 0;
+                gridVertices[vertIdx++] = 0;
+
+                gridVertices[vertIdx++] = zCurr+thickness;
+                gridVertices[vertIdx++] = yCurr;
+                gridVertices[vertIdx++] = 0.5;
+                gridVertices[vertIdx++] = 1;
+                gridVertices[vertIdx++] = 0;
+                gridVertices[vertIdx++] = 0;
+
+                gridVertices[vertIdx++] = zCurr;
+                gridVertices[vertIdx++] = yCurr;
+                gridVertices[vertIdx++] = 0.5;
+                gridVertices[vertIdx++] = 1;
+                gridVertices[vertIdx++] = 0;
+                gridVertices[vertIdx++] = 0;
+
+
+                gridIndices[indiceIdx++] = baseVert;
+                gridIndices[indiceIdx++] = baseVert+1;
+                gridIndices[indiceIdx++] = baseVert+2;
+
+                gridIndices[indiceIdx++] = baseVert;
+                gridIndices[indiceIdx++] = baseVert+2;
+                gridIndices[indiceIdx++] = baseVert+3;
+
+                zCurr+= depthIterator;
+            }
+            yCurr += rowIterator;
+            zCurr = -0.5;
+        }
+        // System.out.println("verticeS: " + Arrays.toString(gridVertices));
+        // System.out.println("indices: " + Arrays.toString(gridIndices));
+        gridVertices = bakeNormalVectors(gridVertices, gridIndices);
+        initializeArrays(gridVertices, gridIndices);
+        initializeVariables();
+        transformation = Matrix.identity();
+        hasTexture = false;
     }
     void cubeMesh(boolean inverted){
         double [] cubeVertices = {
@@ -155,7 +315,7 @@ public class Entity {
             //bottom
             0.5,-0.5,0.5,1, 1, 0,//20
             0.5, -0.5, -0.5,1, 1, 1,//21
-            -0.5,-0.5,0.5,1, 0, 0,//22
+            -0.5,-0.5, 0.5,1, 0, 0,//22
             -0.5,-0.5,-0.5,1, 0, 1,//23
             
         };
@@ -186,6 +346,7 @@ public class Entity {
         // };
         int[] cubeIndices = cubeIndiceDirection(inverted);
         cubeVertices = bakeNormalVectors(cubeVertices, cubeIndices);
+        
         initializeArrays(cubeVertices, cubeIndices);
         initializeVariables();
         transformation = Matrix.Identity();
@@ -246,7 +407,71 @@ public class Entity {
             };
         }
     }
-    
+    void squareMesh(){
+        double[] squareVertices = {
+            -0.5, -0.5, 0, 1, 1, 0,
+            -0.5, 0.5, 0, 1, 0, 0,
+            0.5, 0.5, 0, 1, 1, 0,
+            0.5, -0.5, 0, 1, 0, 1
+        };
+        int[] squareIndices = {
+            0, 1, 2,
+            0, 2, 3
+        };
+        squareVertices = bakeNormalVectors(squareVertices, squareIndices);
+        initializeArrays(squareVertices, squareIndices);
+        initializeVariables();
+        transformation = Matrix.Identity();
+        hasTexture = false;
+    }
+    void squareMeshWithBoundingBox(int uStart, int uEnd, int vStart, int vEnd){
+        double uMin = -0.5 + ((double)uStart / 100);
+        double uMax = -0.5 + ((double)uEnd / 100);
+        double vMin = -0.5 + ((double)vStart / 100);
+        double vMax = -0.5 + ((double)vEnd / 100);
+        double[] squareVertices = {
+            //top
+            -0.5, 0.5,  0, 1,  0.0, 1.0,
+            -0.5, vMax, 0, 1,  0.0, vMax + 0.5,
+            0.5, vMax, 0, 1,  1.0, vMax + 0.5,
+            0.5, 0.5,  0, 1,  1.0, 1.0,
+
+            // mid
+            -0.5, vMax, 0, 1,  0.0, vMax + 0.5,
+            -0.5, vMin, 0, 1,  0.0, vMin + 0.5,
+            uMin, vMin, 0, 1,  uMin + 0.5, vMin + 0.5,
+            uMin, vMax, 0, 1,  uMin + 0.5, vMax + 0.5,
+
+            uMax, vMax, 0, 1,  uMax + 0.5, vMax + 0.5,
+            uMax, vMin, 0, 1,  uMax + 0.5, vMin + 0.5,
+            0.5, vMin, 0, 1,  1.0, vMin + 0.5,
+            0.5, vMax, 0, 1,  1.0, vMax + 0.5,
+
+            //  bottom
+            -0.5, vMin,  0, 1,  0.0, vMin + 0.5,
+            -0.5, -0.5,  0, 1,  0.0, 0.0,
+            0.5, -0.5,  0, 1,  1.0, 0.0,
+            0.5, vMin,  0, 1,  1.0, vMin + 0.5
+        };
+        int[] squareIndices = {
+            0, 1, 3,
+            1, 2, 3,
+
+            4, 5, 7,
+            5, 6, 7,
+
+            8, 9, 11,
+            9, 10, 11,
+
+            12, 13, 15,
+            13, 14, 15
+        };
+        squareVertices = bakeNormalVectors(squareVertices, squareIndices);
+        initializeArrays(squareVertices, squareIndices);
+        initializeVariables();
+        transformation = Matrix.Identity();
+        hasTexture = false;
+    }
     void sphereMesh(int m, int n, double outerRadius, double innerRadius, int uStart, int uEnd, int vStart, int vEnd){
         int verticeCount = (m+1)*(n+1);
         double[] sphereVertices = new double[((verticeCount)*2* INITIAL_MESH_STRIDE)];
@@ -266,6 +491,9 @@ public class Entity {
                     sphereVertices[verticesIndex+1] = y;
                     sphereVertices[verticesIndex+2] = z;
                     sphereVertices[verticesIndex+3] = 1;
+                    // sphereVertices[verticesIndex+4] = fx;
+                    if (fx >= 1.0) fx = 0.99;
+                    if (fx <= 0.0) fx = 0.01;
                     sphereVertices[verticesIndex+4] = fx;
                     sphereVertices[verticesIndex+5] = fy;
                     verticesIndex+=INITIAL_MESH_STRIDE;
@@ -280,72 +508,6 @@ public class Entity {
                 boolean insideU = (j >= uStart && j < uEnd);
                 boolean insideV = (i >= vStart && i < vEnd);
                 if(insideU && insideV){
-                    continue;
-                }
-                int p0 = i * (n+1) + j;
-                int p1 = (i+1) * (n+1) + j;
-                int p2 = p1 + 1;
-                int p3 = p0 + 1;
-
-                sphereIndices[indicesIndex] = p0;
-                sphereIndices[indicesIndex+1] = p3;
-                sphereIndices[indicesIndex+2] = p1;
-
-                sphereIndices[indicesIndex+3] = p1;
-                sphereIndices[indicesIndex+4] = p3;
-                sphereIndices[indicesIndex+5] = p2; 
-
-                sphereIndices[indicesIndex+indiceAllocation] = p0+verticeCount;
-                sphereIndices[indicesIndex+indiceAllocation+1] = p1+verticeCount;
-                sphereIndices[indicesIndex+indiceAllocation+2] = p3+verticeCount;
-
-                sphereIndices[indicesIndex+indiceAllocation+3] = p1+verticeCount;
-                sphereIndices[indicesIndex+indiceAllocation+4] = p2+verticeCount;
-                sphereIndices[indicesIndex+indiceAllocation+5] = p3+verticeCount; 
-
-                indicesIndex += 6;
-            }
-        }
-        sphereIndices = Arrays.copyOf(sphereIndices, indicesIndex*2);
-        sphereVertices = bakeNormalVectors(sphereVertices, sphereIndices);
-        initializeArrays(sphereVertices, sphereIndices);
-        initializeVariables();
-        transformation = Matrix.Identity();
-        hasTexture = false;
-    }
-    void partialSphere(int m, int n, double outerRadius, double innerRadius, double percent, int uStart, int uEnd, int vStart, int vEnd){
-        int sphereFilled = (int)Math.ceil(n *(percent/100));
-        System.out.println("spherefilled: " + sphereFilled);
-        int verticeCount = (m+1)*(n+1);
-        double[] sphereVertices = new double[((verticeCount)*2* INITIAL_MESH_STRIDE)];
-        int verticesIndex = 0;
-        for(double r : new double[]{innerRadius, outerRadius}){
-            for(int i = 0; i <= m; i++){
-                double fy = ((double)i / (double)m);
-                for(int j = 0; j <= n; j++){
-                    double fx = ((double)j / (double)n);
-                    double pihalf = -((double)Math.PI/2);
-                    double longtitude = -((double)(Math.PI/2)) + fy * Math.PI;
-                    double latitude = fx * 2 * Math.PI;
-                    double x = r*Math.cos(longtitude)  * Math.cos(latitude);
-                    double y = r*Math.sin(longtitude);
-                    double z = r*Math.cos(longtitude) * Math.sin(latitude);
-                    sphereVertices[verticesIndex] = x;
-                    sphereVertices[verticesIndex+1] = y;
-                    sphereVertices[verticesIndex+2] = z;
-                    sphereVertices[verticesIndex+3] = 1;
-                    sphereVertices[verticesIndex+4] = fx;
-                    sphereVertices[verticesIndex+5] = fy;
-                    verticesIndex+=INITIAL_MESH_STRIDE;
-                }
-            }
-        }
-        int indiceAllocation = m * n * 2 * 3;
-        int[] sphereIndices = new int[indiceAllocation*2];
-        int indicesIndex = 0;
-        for(int i = 0; i < m; i++){
-            for(int j = 0; j < n; j++){
-                if(j >= sphereFilled){
                     continue;
                 }
                 int p0 = i * (n+1) + j;
@@ -429,12 +591,16 @@ public class Entity {
             double ny = (az * bx) - (ax * bz);
             double nz = (ax * by) - (ay * bx);
 
-            double magnitude = Math.sqrt((nx*nx) + (ny*ny) + (nz*nz));
 
-            nx /= magnitude;
-            ny /= magnitude;
-            nz /= magnitude;
-
+            double length = Math.sqrt(nx * nx + ny * ny + nz * nz);
+            if (length > 1e-8) {
+                nx /= length;
+                ny /= length;
+                nz /= length;
+            } else {
+                // Default fallback normal if triangle is degenerate
+                nx = 0; ny = 0; nz = 1;
+            }
             newVertices[np0] = x0;
             newVertices[np0+1] = y0;
             newVertices[np0+2] = z0;
@@ -504,31 +670,32 @@ public class Entity {
             int backStride = (i+triCount);
             int backIndex = backStride * 3;
             shapeIndices[frontIndex] = 0;
-            shapeIndices[frontIndex+1] = i + 1;
-            shapeIndices[frontIndex+2] = i + 2;
+            shapeIndices[frontIndex+1] = i + 2;
+            shapeIndices[frontIndex+2] = i + 1;
             shapeIndices[backIndex] = vertCount;
-            shapeIndices[backIndex+1] = i+vertCount+2;
-            shapeIndices[backIndex+2] = i+vertCount+1;
+            shapeIndices[backIndex+1] = i+vertCount+1;
+            shapeIndices[backIndex+2] = i+vertCount+2;
         }  
         int a = 0, b = vertCount, c = vertCount+1, d = 1;
         for(int i = 0; i < vertCount; i++){
-            System.arraycopy(blueprint, a*INITIAL_MESH_STRIDE, shapeVertices, verticeIndex, INITIAL_MESH_STRIDE);
-            System.arraycopy(blueprint, b*INITIAL_MESH_STRIDE, shapeVertices, verticeIndex+6, INITIAL_MESH_STRIDE);
-            System.arraycopy(blueprint, c*INITIAL_MESH_STRIDE, shapeVertices, verticeIndex+12, INITIAL_MESH_STRIDE);
-            System.arraycopy(blueprint, d*INITIAL_MESH_STRIDE, shapeVertices, verticeIndex+18, INITIAL_MESH_STRIDE);
-            
+            int s = INITIAL_MESH_STRIDE;
+            System.arraycopy(blueprint, a*s, shapeVertices, verticeIndex,       s);
+            System.arraycopy(blueprint, b*s, shapeVertices, verticeIndex + s,   s);
+            System.arraycopy(blueprint, c*s, shapeVertices, verticeIndex + 2*s, s);
+            System.arraycopy(blueprint, d*s, shapeVertices, verticeIndex + 3*s, s);
+
             shapeIndices[indiceIndex] = currVertex;
-            shapeIndices[indiceIndex+1] = currVertex+1;
-            shapeIndices[indiceIndex+2] = currVertex+2;
+            shapeIndices[indiceIndex+1] = currVertex+2;
+            shapeIndices[indiceIndex+2] = currVertex+1;
             shapeIndices[indiceIndex+3] = currVertex;
-            shapeIndices[indiceIndex+4] = currVertex+2;
-            shapeIndices[indiceIndex+5] = currVertex+3;
+            shapeIndices[indiceIndex+4] = currVertex+3;
+            shapeIndices[indiceIndex+5] = currVertex+2;
             a++;
             b++;
             c = (c < doubleVerticeCount-1) ? c + 1 : vertCount;
             d = (d < vertCount-1) ? d + 1 : 0;
             indiceIndex += 6;
-            verticeIndex += 24;
+            verticeIndex += 4*s;
             currVertex += 4;
         }
         return new Entity(shapeVertices, shapeIndices, Matrix.identity());

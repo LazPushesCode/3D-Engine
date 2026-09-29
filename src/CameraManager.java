@@ -15,7 +15,9 @@ public class CameraManager {
 
     Matrix combinedMatrix;
 
-    double speed;
+    double movementSpeed;
+    double rotationSpeed;
+    double sprintSpeed;
 
     CameraManager(int windowWidth, int windowLength, int fov){
         this.pitch = 0;
@@ -28,14 +30,17 @@ public class CameraManager {
         this.aspect = (double)windowWidth/windowLength;
         this.near = 0.1;
         this.far = 1000;
-        this.speed = 0.005;
+        this.movementSpeed = 0.0005;
+        this.rotationSpeed = 0.3;
+        sprintSpeed = 0.05;
         viewMatrix = Matrix.Identity();
         projectionMatrix = Matrix.Identity();
         combinedMatrix = Matrix.Identity();
         updateCameraMatrix();
     }
     void updateViewMatrix(){
-        viewMatrix = Matrix.Rotatex(pitch)
+        viewMatrix = Matrix.Rotatez(roll)
+        .multiply(Matrix.Rotatex(pitch))
         .multiply(Matrix.Rotatey(-yaw))
         .multiply(Matrix.Translate(-x,-y,-z));
     }
@@ -59,14 +64,15 @@ public class CameraManager {
     }
     void pollInput(InputManager im, WindowManager wm, double deltaTime){
         wm.displayTilesOnScreen = im.showTiles;
-        if(im.ru)this.pitch += .3 * deltaTime;
-        if(im.rd)this.pitch -= .3 * deltaTime;
-        if(im.rl)this.yaw -= .3 * deltaTime;
-        if(im.rr)this.yaw += .3 * deltaTime;
+        if(im.ru)this.pitch += rotationSpeed * deltaTime;
+        if(im.rd)this.pitch -= rotationSpeed * deltaTime;
+        if(im.rl)this.yaw -= rotationSpeed * deltaTime;
+        if(im.rr)this.yaw += rotationSpeed * deltaTime;
         clampPitch();
         double[] forward = normalize(computeForward());
         double[] worldUp = {0,1,0};
         double[] right = normalize(crossProduct(worldUp,forward));
+        double speed = (im.sprint) ? sprintSpeed : movementSpeed;
         if(im.forward){
             x += forward[0] * speed * deltaTime;
             z += forward[2] * speed * deltaTime;
@@ -88,6 +94,24 @@ public class CameraManager {
         }
         if(im.down){
             y -= speed * deltaTime;
+        }
+        if(im.rollLeft){
+            roll -= 0.02*deltaTime;
+        }
+         if(im.rollRight){
+            roll += 0.02*deltaTime;
+        }
+        if(im.increaseMovementSpeed){
+            movementSpeed = (movementSpeed < 0.05) ? movementSpeed + 0.000005 : 0.05;
+        }
+        if(im.decreaseMovementSpeed){
+            movementSpeed = (movementSpeed > 0) ? movementSpeed - 0.000005 : 0;
+        }
+        if(im.increaseRotationSpeed){
+            rotationSpeed = (rotationSpeed < 0.3) ? rotationSpeed + 0.005 : 0.3;
+        }
+        if(im.decreaseRotationSpeed){
+            rotationSpeed = (rotationSpeed > 0) ? rotationSpeed - 0.005 : 0;
         }
     }
     double[] computeForward(){

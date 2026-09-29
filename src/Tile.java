@@ -6,6 +6,7 @@ public class Tile {
 
     int[] tileColorBuffer;
     float[] tileDepthBuffer;
+    int[] tilePrioritize;
 
     int id;
 
@@ -21,15 +22,18 @@ public class Tile {
 
         tileColorBuffer = new int[(int)tileWidth * (int)tileLength];
         tileDepthBuffer = new float[(int)tileWidth * (int)tileLength];
+        tilePrioritize = new int[(int)tileWidth * (int)tileLength];
 
         java.util.Arrays.fill(tileColorBuffer, 0);
         java.util.Arrays.fill(tileDepthBuffer, 0);
+        java.util.Arrays.fill(tilePrioritize, 0);
     }
     void emptyTileData(){
         indicesCount = 0;
 
        java.util.Arrays.fill(tileColorBuffer, 0xFF000000);
        java.util.Arrays.fill(tileDepthBuffer, -Float.MAX_VALUE);
+       java.util.Arrays.fill(tilePrioritize, 0);
 
     }
     void displayData(){

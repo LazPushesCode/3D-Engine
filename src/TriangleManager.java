@@ -13,9 +13,11 @@ public class TriangleManager {
             int p1 = s.globalIndices[i+1];
             int p2 = s.globalIndices[i+2];
             int entityID = s.globalIndices[i+3];
-            if(determineDirection(s.globalVertices, p0, p1, p2) <= 0){
-                trianglesCulled++;
-                continue;
+            if(s.entities.get(entityID).backFaceCulling){
+                if(determineDirection(s.globalVertices, p0, p1, p2) <= 0){
+                    trianglesCulled++;
+                    continue;
+                }
             }
             validIndices[currentIndex] = p0;
             validIndices[currentIndex+1] = p1;
@@ -179,7 +181,7 @@ public class TriangleManager {
             case 3:
                 return ((w - y) >= 0);
             case 4:
-                return (z >= 0);
+                return ((w) >= 0);
             case 5: 
                 return ((w - z) >= 0);
             default:

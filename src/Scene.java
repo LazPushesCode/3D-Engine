@@ -6,8 +6,11 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 public class Scene {
     HashMap<Integer, Entity> entities;
+    HashMap<Integer, Entity> parents;
     HashMap<Integer, CameraManager> cameras;
     HashMap<Integer, Light> lights;
+    HashMap<Integer, ParticleSystem> particleSystems;
+    
     
 
     static final int STRIDE = 13;
@@ -33,6 +36,8 @@ public class Scene {
     int entityCount;
     int cameraCount;
     int lightCount;
+    int parentCount;
+    int particleSystemCount;
 
     int cameraFocused;
 
@@ -63,14 +68,19 @@ public class Scene {
     int [] threadEntityOffsets;
     int threadCount;
     ExecutorService entityPool;
+    
 
     Scene(){
         entities = new HashMap<>();
         cameras = new HashMap<>();
         lights = new HashMap<>(); 
+        parents = new HashMap<>();
+        particleSystems = new HashMap<>();
         cameraFocused = 0;
         entityCount = 0;
         cameraCount = 0;
+        parentCount = 0;
+        particleSystemCount = 0;
         initialVerticesSize = 0;
         initialIndicesSize = 0;
         currentVerticesSize = 0;
@@ -93,10 +103,12 @@ public class Scene {
         entities.put(entityCount, et);
         et.ID = entityCount;
         entityCount++;
-    }
-    void addEntityChildren(Entity e){
-        for(Entity c : e.children.values()){
+        for(Entity c: et.children.values()){
             addEntity(c);
+        }
+        if(et.parent == null){
+            parents.put(parentCount, et);
+            parentCount++;
         }
     }
     void addLight(Light lt){
@@ -104,6 +116,11 @@ public class Scene {
         lt.ID = lightCount;
         lightCount++;
         lightBuffer = new double[LIGHT_STRIDE * lightCount];
+    }
+    void addParticleSystem(ParticleSystem ps){
+        particleSystems.put(particleSystemCount, ps);
+        ps.ID = particleSystemCount;
+        particleSystemCount++;
     }
     void bindVertices(){
         initialVerticesSize = calculateVerticeCount();
@@ -118,6 +135,7 @@ public class Scene {
     int calculateVerticeCount(){
         int sum = 0;
         for(Entity e: entities.values()){
+            if(e.vertices == null) continue;
             int verticeCount = e.vertices.length / 6;
             sum += verticeCount * STRIDE;
         }
@@ -126,6 +144,7 @@ public class Scene {
     int calculateTriangleCount(){
         int sum = 0;
         for(Entity e : entities.values()){
+            if(e.indices == null) continue;
             int indiceCount = e.indices.length / 3;
             sum += indiceCount * 4;
         }
@@ -142,7 +161,7 @@ public class Scene {
     for(Map.Entry<Integer, Entity> entry : entities.entrySet()){
         int ID = entry.getKey();
         Entity e = entry.getValue();
-        
+        if(e.vertices == null || e.indices == null) continue;
         e.globalVerticeOffset = vertexOffsetAccumulator;
         
         int indicesLength = e.indices.length;
@@ -156,11 +175,11 @@ public class Scene {
         }
         vertexOffsetAccumulator += e.vertices.length / Entity.LOCAL_MESH_STRIDE;
         
-        currentIndicesIndex = index;
+            currentIndicesIndex = index;
+        }
+        currentIndicesSize = currentIndicesIndex;
     }
-    currentIndicesSize = currentIndicesIndex;
-}
-void assignEntitiesToThreads(){
+    void assignEntitiesToThreads(){
         int batch = (int) Math.ceil((double) entityCount / threadCount);
         int currOffset = entityCount;
         for(int i = threadCount-1; i >= 0; i--){
@@ -169,9 +188,15 @@ void assignEntitiesToThreads(){
             if(currOffset < 0 ) currOffset = 0;
         }
     }
+    void updateEntityTransformations(){
+        for(Entity e : parents.values()){
+            e.updateTransformations(null);
+        }
+    }
     void entityConversions(){
         currentVerticesSize = 0;
         for(Entity e : entities.values()){
+            if(e.vertices == null) continue;
             currentVerticesSize += (e.vertices.length/Entity.LOCAL_MESH_STRIDE)*STRIDE;
         }
         CountDownLatch latch = new CountDownLatch(threadCount);
@@ -180,6 +205,11 @@ void assignEntitiesToThreads(){
         for(int i = 0; i < threadCount; i++){
             final int threadStart = start;
             int end = threadEntityOffsets[i];
+            // futures[i] = CompletableFuture.runAsync(() -> {
+            // for(int j = threadStart; j < end; j++){
+            //         transformEntity(j, cm);
+            //     }
+            // }, entityPool);
             entityPool.execute(() -> {
                 try {
                     for(int j = threadStart; j < end; j++){
@@ -191,6 +221,7 @@ void assignEntitiesToThreads(){
             });
             start = threadEntityOffsets[i];
         }
+        // CompletableFuture.allOf(futures).join();
         try {
             latch.await();
         } catch (InterruptedException e) {
@@ -199,8 +230,8 @@ void assignEntitiesToThreads(){
     }
     void transformEntity(int id, CameraManager cm){
         Entity e = entities.get(id);
-        e.applyTransformationValues();
-
+        // e.applyTransformationValues();
+            if(e.vertices == null) return;
             Matrix t = e.transformation;
             Matrix cameraMatrix = cm.combinedMatrix;
             double[] tData = t.data;
@@ -279,8 +310,6 @@ void assignEntitiesToThreads(){
         processedIndices[processedIndicesSize++] = v1;
         processedIndices[processedIndicesSize++] = v2;
         processedIndices[processedIndicesSize++] = entityID;
-        
-        // calculateTriangleLightLevel(v0, v1, v2);
     }
     void fillLightBuffer(){
         int currentLight = 0;
@@ -313,6 +342,11 @@ void assignEntitiesToThreads(){
     void applyLightRotations(){
         for(Light l : lights.values()){
             l.applyRotation();
+        }
+    }
+    void convertParticlesToClipSpace(CameraManager cm, int windowWidth, int windowLength){
+        for(ParticleSystem ps : particleSystems.values()){
+            ps.convertToClipSpace(cm, windowWidth, windowLength);
         }
     }
     void LightYawRotate(double y){

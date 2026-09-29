@@ -49,9 +49,9 @@ public class Light {
         intensity = givenIntensity;
     }
     void setColor(double tr, double tg, double tb){
-        r = tr;
-        g = tg;
-        b = tb;
+        r = tr/255;
+        g = tg/255;
+        b = tb/255;
     }
     void yawRotation(double degree){
         yaw += degree;
