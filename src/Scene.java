@@ -7,7 +7,7 @@ import java.util.concurrent.Executors;
 public class Scene {
     HashMap<Integer, Entity> entities;
     HashMap<Integer, Entity> parents;
-    HashMap<Integer, CameraManager> cameras;
+    HashMap<Integer, Camera> cameras;
     HashMap<Integer, Light> lights;
     HashMap<Integer, ParticleSystem> particleSystems;
     
@@ -200,7 +200,7 @@ public class Scene {
             currentVerticesSize += (e.vertices.length/Entity.LOCAL_MESH_STRIDE)*STRIDE;
         }
         CountDownLatch latch = new CountDownLatch(threadCount);
-        CameraManager cm = cameras.get(cameraFocused);
+        Camera cm = cameras.get(cameraFocused);
         int start = 0;
         for(int i = 0; i < threadCount; i++){
             final int threadStart = start;
@@ -228,7 +228,7 @@ public class Scene {
             e.printStackTrace();
         }
     }
-    void transformEntity(int id, CameraManager cm){
+    void transformEntity(int id, Camera cm){
         Entity e = entities.get(id);
         // e.applyTransformationValues();
             if(e.vertices == null) return;
@@ -298,7 +298,7 @@ public class Scene {
             globalVertices[i+Y_OFFSET] = ((1-globalVertices[i+Y_OFFSET]) * 0.5 * length);
         }
     }
-    void addCamera(CameraManager cm){
+    void addCamera(Camera cm){
         cameras.put(cameraCount, cm);
         cameraCount++;
     }
@@ -344,7 +344,7 @@ public class Scene {
             l.applyRotation();
         }
     }
-    void convertParticlesToClipSpace(CameraManager cm, int windowWidth, int windowLength){
+    void convertParticlesToClipSpace(Camera cm, int windowWidth, int windowLength){
         for(ParticleSystem ps : particleSystems.values()){
             ps.convertToClipSpace(cm, windowWidth, windowLength);
         }

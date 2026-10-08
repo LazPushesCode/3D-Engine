@@ -1,4 +1,4 @@
-public class Light {
+public class Light extends Entity{
 
     static final int DIRECTIONAL = 0;
     static final int POINT = 1;
@@ -6,8 +6,6 @@ public class Light {
 
     int ID;
 
-    double x, y, z;
-    double yaw, pitch;
     double xDir, yDir, zDir;
     double intensity;
     int type;
@@ -66,8 +64,5 @@ public class Light {
         xDir = Math.sin(yRadians) * Math.cos(pRadians);
         yDir = Math.sin(pRadians);
         zDir = Math.cos(yRadians) * Math.cos(pRadians);
-    }
-    void translate(double tx, double ty, double tz){
-        x += tx; y += ty; z += tz;
     }
 }

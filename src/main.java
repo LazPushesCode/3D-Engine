@@ -7,7 +7,7 @@ public class main{
         int cores = Runtime.getRuntime().availableProcessors();
 
         WindowManager wm = new WindowManager(1920, 1080, cores);
-        CameraManager cm = new CameraManager(wm.width, wm.length,100);
+        Camera cm = new Camera(wm.width, wm.length,100);
         InputManager im = new InputManager();
 
         Texture grassblock = new Texture("C:\\Users\\lazar\\3D-Engine\\resources\\assets\\11635.png");
@@ -27,16 +27,28 @@ public class main{
         world.addEntity(cube);
         cube.scale(1,1,1);
 
-        Animation anitest = new Animation();
-        anitest.createKeyFrame(10, 0, 0 , 180, 180, 180, 0, 0, 0, 5000);
-        anitest.createKeyFrame(0, 10, 0 , 0, 0, 0, 0, 0, 0, 10000);
-        
+        Entity cube2 = new Entity();
+        cube2.cubeMesh(false);
+        world.addEntity(cube2);
+
+        AnimationManager am = new AnimationManager(5, 1);
+        am.addAnimation(new double[]{0, 0, 0, 0, 0, -90, 0, 0, 0, 1000, 1, 0.5,
+                                     5, 5, 0, 0, 0, -90, 0, 0, 0, 2500, 1, 0.75,
+                                     20, 0, 0, 0, 0, -90, 0, 0, 0, 1200, 1, 0.5
+                                    ,35, 10, 0, 0, 0, -90, 0, 0, 0, 3000, 1, 0.5
+                                    ,40, 0, 0, 0, 0, 0, 0, 0, 0, 3000, 1, 0.5});
+        // am.addAnimation(new double[]{0, 10, 0, 0, 0, 0, 0, 0, 0, 15000, 0, 0});
         world.ambience = 1;
+        // System.out.println("blueprints: " + Arrays.toString(am.blueprints));
+
+        // am.addEntity(cube2);
+        // am.applyAnimationOnEntity(cube, 0);
+        // am.applyAnimationOnEntity(cube, 0);
 
         long currentTime = (System.currentTimeMillis());
         long previousTime = 0;
 
-        double deltaTime = 0;
+        long deltaTime = 0;
         world.bindVertices();
         world.initializeGlobalIndices();
 
@@ -64,7 +76,8 @@ public class main{
         boolean flip = true;
 
         long totalTime = 0;
-
+        boolean flag = false;
+        boolean flag2 = false;
     while(true){
         try{
             deltaTime = (currentTime - previousTime)%1000;
@@ -77,7 +90,18 @@ public class main{
         
         start = System.nanoTime();
 
-        if(!anitest.lockAnimation)anitest.playAnimation(cube, totalTime);
+        // if(!anitest.lockAnimation)anitest.playAnimation(cube, totalTime);
+
+        if(im.action && !flag){
+            am.applyAnimationOnEntity(cube2, 0);
+            flag = true;
+        }
+        if(im.action2 && !flag2){
+            am.applyAnimationOnEntity(cube, 0);
+            flag2 = true;
+        }
+        // cm.x = cube.x; cm.y = cube.y; cm.z = cube.z;
+        am.playAnimations(world, deltaTime);
         // System.out.println("x: " + cube.x);
         world.assignEntitiesToThreads();
         world.updateEntityTransformations();

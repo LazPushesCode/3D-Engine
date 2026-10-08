@@ -35,6 +35,17 @@ public class Entity {
     int ID;
     int childrenCount;
 
+
+    //Animation data
+    int animationID;
+    int indexID;
+    long prevTime;
+    int currentKeyFrame;
+
+    double xPrevSpine;
+    double yPrevSpine;
+    double zPrevSpine;
+
     static final int INITIAL_MESH_STRIDE = 6;
     static final int LOCAL_MESH_STRIDE = 9;
 
@@ -76,6 +87,14 @@ public class Entity {
         prioritize = false;
         affectedByLight = true;
         childrenCount = 0;
+
+        xPrevSpine = 0;
+        yPrevSpine = 0;
+        zPrevSpine = 0;
+
+        prevTime = 0;
+        currentKeyFrame = 0;
+
         children = new HashMap<>();
     }
     void setMaterialValues(double diff, double spec, double shiny){

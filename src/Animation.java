@@ -51,7 +51,6 @@ public class Animation {
     void playAnimation(Entity e, long currTime){
          if(currTime > duration[currentKeyFrame]){
             currentKeyFrame++;
-            System.out.println("currentKeyFrame: " + currentKeyFrame);
         }
         if(currentKeyFrame >= totalKeyFrames) {
             lockAnimation = true;

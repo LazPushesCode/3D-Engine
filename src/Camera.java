@@ -1,44 +1,40 @@
+public class Camera extends Entity{
+        double FOV;
+        double aspect;
+        double far;
+        double near;
 
-public class CameraManager {
-    double FOV;
-    double aspect;
-    double far;
-    double near;
+        double xMoved, yMoved, zMoved;
 
-    double x, y, z;
-    double pitch, yaw, roll;
+        Matrix viewMatrix;
+        Matrix projectionMatrix;
 
-    double xMoved, yMoved, zMoved;
+        Matrix combinedMatrix;
 
-    Matrix viewMatrix;
-    Matrix projectionMatrix;
+        double movementSpeed;
+        double rotationSpeed;
+        double sprintSpeed; 
 
-    Matrix combinedMatrix;
-
-    double movementSpeed;
-    double rotationSpeed;
-    double sprintSpeed;
-
-    CameraManager(int windowWidth, int windowLength, int fov){
-        this.pitch = 0;
-        this.yaw = 0;
-        this.roll = 0;
-        this.x = 0;
-        this.y = 0;
-        this.z = 0;
-        this.FOV = Math.toRadians(fov);
-        this.aspect = (double)windowWidth/windowLength;
-        this.near = 0.1;
-        this.far = 1000;
-        this.movementSpeed = 0.0005;
-        this.rotationSpeed = 0.3;
-        sprintSpeed = 0.05;
-        viewMatrix = Matrix.Identity();
-        projectionMatrix = Matrix.Identity();
-        combinedMatrix = Matrix.Identity();
-        updateCameraMatrix();
-    }
-    void updateViewMatrix(){
+        Camera(int windowWidth, int windowLength, int fov){
+            this.pitch = 0;
+            this.yaw = 0;
+            this.roll = 0;
+            this.x = 0;
+            this.y = 0;
+            this.z = 0;
+            this.FOV = Math.toRadians(fov);
+            this.aspect = (double)windowWidth/windowLength;
+            this.near = 0.1;
+            this.far = 1000;
+            this.movementSpeed = 0.0005;
+            this.rotationSpeed = 0.3;
+            sprintSpeed = 0.05;
+            viewMatrix = Matrix.Identity();
+            projectionMatrix = Matrix.Identity();
+            combinedMatrix = Matrix.Identity();
+            updateCameraMatrix();
+        }
+        void updateViewMatrix(){
         viewMatrix = Matrix.Rotatez(roll)
         .multiply(Matrix.Rotatex(pitch))
         .multiply(Matrix.Rotatey(-yaw))
@@ -55,7 +51,7 @@ public class CameraManager {
         projectionMatrix.data = temp;
     }
 
-    CameraManager setCameraPosition(double x, double y, double z){
+    Camera setCameraPosition(double x, double y, double z){
         this.x = x;
         this.y = y;
         this.z = z;

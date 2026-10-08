@@ -51,7 +51,7 @@ public class WindowManager {
     void clearScreen(){
         panel.clear(0xFF000000); // opaque black
     }
-    void renderTile(Tile t, Scene s, CameraManager c){
+    void renderTile(Tile t, Scene s, Camera c){
       // if(t.id < 3 || t.id > 12)return;
       
       int y_offset = Scene.Y_OFFSET;
@@ -199,7 +199,7 @@ public class WindowManager {
         }
     }
 }
-   void sampleTexture(Scene s, CameraManager c, Tile t, int px, int py, double wx, double wy, double wz, double nx, double ny, double nz, double u, double v, double z, int[]textureBuffer, Entity e, boolean flag){
+   void sampleTexture(Scene s, Camera c, Tile t, int px, int py, double wx, double wy, double wz, double nx, double ny, double nz, double u, double v, double z, int[]textureBuffer, Entity e, boolean flag){
       int tileW = (int) t.tileWidth;
       int xLocal = px;
       int yLocal = py + (int)(t.tileLength - t.yOffset);

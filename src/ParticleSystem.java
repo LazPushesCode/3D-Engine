@@ -40,7 +40,7 @@ public class ParticleSystem {
     void setColor(int tr, int tg, int tb){
         r = tr; g = tg; b = tb;
     }
-    void convertToClipSpace(CameraManager cm, int windowWidth, int windowLength){
+    void convertToClipSpace(Camera cm, int windowWidth, int windowLength){
         Matrix cameraMatrix = cm.combinedMatrix;
         double[] cData = cameraMatrix.data;
         // System.arraycopy(vertices,0, vertBuffer, 0, particleCount*VERTICE_STRIDE);
