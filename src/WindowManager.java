@@ -204,7 +204,6 @@ public class WindowManager {
       int xLocal = px;
       int yLocal = py + (int)(t.tileLength - t.yOffset);
       int pixel = (yLocal * tileW) + xLocal;
-
       // if(localDepthTest(t,px, py, z)){
          if(e.hasTexture){
             int textureWidth = e.textureWidth;
@@ -222,11 +221,11 @@ public class WindowManager {
             int b = (int)((color & 0xFF));
             double ambience = s.ambience;
             double additiveR, additiveG, additiveB;
-            
             if(e.affectedByLight){
                additiveR =  r * ambience;
                additiveG = g * ambience;
                additiveB = b * ambience;
+            
                if(s.lights != null){
                   if (e.greenScreen) {
                      if(g > r * 1.2 && g > b * 1.2 && g > 40){

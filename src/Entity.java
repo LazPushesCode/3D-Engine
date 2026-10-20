@@ -4,7 +4,8 @@ import java.util.HashMap;
 
 public class Entity {
     //keep
-    double[] vertices;
+    double[] worldVertices;
+    double[] staticVertices;
     int[] indices;
 
     int[] textureBuffer;
@@ -24,13 +25,13 @@ public class Entity {
     double yaw, pitch, roll;
     double xSize, ySize, zSize;
     Quaternion orientation;
+    int verticeCount;
     int globalVerticeOffset;
     int globalIndiceOffset;
     int defaultColor = 0xFFFFFF;
 
     Entity parent;
     HashMap<Integer, Entity> children;
-    HashMap<Integer, int[]> skeleton;
 
     int ID;
     int childrenCount;
@@ -42,9 +43,20 @@ public class Entity {
     long prevTime;
     int currentKeyFrame;
 
-    double xPrevSpine;
-    double yPrevSpine;
-    double zPrevSpine;
+    static final int TRACK_STRIDE = 4;
+    static final int TRACK_ANIMATIONID = 0;
+    static final int TRACK_CURRENT_FRAME = 1;
+    static final int TRACK_GROUP_OFFSET= 2;
+    static final int TRACK_VERTICE_COUNT = 3;
+
+    int[] trackData; // holds animation id, current frame, group offset (start) and vertice count (end)
+    double[] trackPrevTimes; 
+    int[] trackIndices;
+
+    int currentTrackIndiceSize;
+    int maxTrackIndiceSize;
+    int trackCount;
+    
 
     static final int INITIAL_MESH_STRIDE = 6;
     static final int LOCAL_MESH_STRIDE = 9;
@@ -87,10 +99,9 @@ public class Entity {
         prioritize = false;
         affectedByLight = true;
         childrenCount = 0;
-
-        xPrevSpine = 0;
-        yPrevSpine = 0;
-        zPrevSpine = 0;
+        verticeCount = 0;
+        currentTrackIndiceSize = 0;
+        trackCount = 0;
 
         prevTime = 0;
         currentKeyFrame = 0;
@@ -129,10 +140,40 @@ public class Entity {
         }
     }
     void initializeArrays(double [] givenVertices, int [] givenIndices){
-        vertices = givenVertices;
+        int vc = givenVertices.length/9;
+        staticVertices = new double[givenVertices.length];
+        System.arraycopy(givenVertices, 0, staticVertices, 0, givenVertices.length);
+        // staticVertices = givenVertices;
+        worldVertices = givenVertices;
         indices = givenIndices;
+        trackData = new int[TRACK_STRIDE*vc];
+        trackPrevTimes = new double[vc];
+        trackIndices = new int[vc];
+        maxTrackIndiceSize = vc;
     }
-     void generateGrid(int rows, int columns, int depth){
+    void addTrackData(int animationID){
+        // trackData[activeTrackCount] = animationID;
+        // trackData[TRACK_CURRENT_FRAME] = 0;
+        // trackData[TRACK_GROUP_OFFSET] = 0;
+    }
+    void addTrackIndices(int[] givenIndices){
+        if(currentTrackIndiceSize + givenIndices.length > maxTrackIndiceSize){
+            // increase array size
+            maxTrackIndiceSize *= 2;
+            int[] newTrackIndices = new  int[maxTrackIndiceSize];
+            System.arraycopy(trackIndices, 0, newTrackIndices, 0, currentTrackIndiceSize);
+            trackIndices = newTrackIndices;
+        }
+        System.arraycopy(givenIndices, 0, trackIndices, currentTrackIndiceSize, givenIndices.length);
+        int index = trackCount * TRACK_STRIDE;
+        trackData[index] = 0;
+        trackData[index+TRACK_CURRENT_FRAME] = 0;
+        trackData[index+TRACK_GROUP_OFFSET] = currentTrackIndiceSize;
+        trackData[index+TRACK_VERTICE_COUNT] = givenIndices.length;
+        currentTrackIndiceSize += givenIndices.length;
+        trackCount++;
+    }
+    void generateGrid(int rows, int columns, int depth){
         double rowIterator = (double) 1 / rows;
         double colIterator = (double) 1 / columns;
         double depthIterator = (double) 1 / depth;
@@ -560,6 +601,42 @@ public class Entity {
         transformation = Matrix.Identity();
         hasTexture = false;
     }
+    void generateFlatDynamicMesh(int row, int col){
+        double xCurr = -0.5;
+        double zCurr = -0.5;
+        double height = 1 / (double)(row-1);
+        double width = 1 / (double)(col-1);
+
+        int indIdx = 0;
+        double[] meshVertices = new double[(int)(row*col)*INITIAL_MESH_STRIDE];
+        int[] meshIndices = new int[(int)((row-1)*(col-1))*6];
+        for(int i = 0; i < row; i++){
+            int rowOffset = ((i*col));
+            for(int j = 0; j < col; j++){
+                int index = (rowOffset+j)*INITIAL_MESH_STRIDE;
+                meshVertices[index] = xCurr; meshVertices[index+1] = 0; meshVertices[index+2] = zCurr; meshVertices[index+3] = 1; meshVertices[index+4] = 0; meshVertices[index+5] = 0;
+                zCurr += width;
+            }
+            xCurr += height;
+            zCurr = -0.5;
+        }
+        int vertCount = row*col;
+        int vertIdx = 0;
+        for(int i = 0; i < row-1; i++){
+            for(int j = 0; j < col-1; j++){
+                meshIndices[indIdx++]= vertIdx; meshIndices[indIdx++] = vertIdx+1; meshIndices[indIdx++] = vertIdx+7;
+                meshIndices[indIdx++]= vertIdx+7; meshIndices[indIdx++] = vertIdx+6; meshIndices[indIdx++] = vertIdx;
+                vertIdx++;
+            }
+            vertIdx++;
+        }
+        meshVertices = bakeNormalVectors(meshVertices, meshIndices);
+        initializeArrays(meshVertices, meshIndices);
+        initializeVariables();
+        transformation = Matrix.Identity();
+        hasTexture = false;
+        
+    }
     double[] bakeNormalVectors(double [] vertices, int[] indices){
         int indicesLength = indices.length;
         int verticesLength = vertices.length;
@@ -663,7 +740,6 @@ public class Entity {
             0, 2, 1
         };
         initializeArrays(cubeVertices, cubeIndices);
-        System.out.println(Arrays.toString(cubeVertices));
         initializeVariables();
         transformation = Matrix.Identity();
     }

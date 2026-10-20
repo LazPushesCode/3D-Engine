@@ -3,7 +3,7 @@ public class Animation {
     
     
     double[] entityIDs;
-    CameraManager cm;
+    Camera cm;
 
     long prevTime;
 
@@ -66,7 +66,7 @@ public class Animation {
     }
     void addEntity(Entity e){
     }
-    void setCameraFocused(CameraManager givenCm){
+    void setCameraFocused(Camera givenCm){
         cm = givenCm;
     }
     //reallocate buffers

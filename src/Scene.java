@@ -9,6 +9,11 @@ public class Scene {
     HashMap<Integer, Entity> parents;
     HashMap<Integer, Camera> cameras;
     HashMap<Integer, Light> lights;
+
+    // HashMap<Integer, Light> lightsList;
+    Camera activeCamera;
+
+
     HashMap<Integer, ParticleSystem> particleSystems;
     
     
@@ -76,6 +81,7 @@ public class Scene {
         lights = new HashMap<>(); 
         parents = new HashMap<>();
         particleSystems = new HashMap<>();
+        // lightsList = new HashMap<>();
         cameraFocused = 0;
         entityCount = 0;
         cameraCount = 0;
@@ -110,7 +116,12 @@ public class Scene {
             parents.put(parentCount, et);
             parentCount++;
         }
-    }
+    } 
+    // void addToLightList(Light lt){
+    //     lights.put(lt.ID, lt);
+    //     lightCount++;
+    //     lightBuffer = new double[LIGHT_STRIDE * lightCount];
+    // }
     void addLight(Light lt){
         lights.put(lightCount, lt);
         lt.ID = lightCount;
@@ -135,9 +146,10 @@ public class Scene {
     int calculateVerticeCount(){
         int sum = 0;
         for(Entity e: entities.values()){
-            if(e.vertices == null) continue;
-            int verticeCount = e.vertices.length / 6;
-            sum += verticeCount * STRIDE;
+            if(e.worldVertices == null) continue;
+            int calculatedVerticeCount = e.worldVertices.length / 6;
+            e.verticeCount = calculatedVerticeCount;
+            sum += calculatedVerticeCount * STRIDE;
         }
         return sum;
     }
@@ -161,7 +173,7 @@ public class Scene {
     for(Map.Entry<Integer, Entity> entry : entities.entrySet()){
         int ID = entry.getKey();
         Entity e = entry.getValue();
-        if(e.vertices == null || e.indices == null) continue;
+        if(e.worldVertices == null || e.indices == null) continue;
         e.globalVerticeOffset = vertexOffsetAccumulator;
         
         int indicesLength = e.indices.length;
@@ -173,7 +185,7 @@ public class Scene {
             globalIndices[index+3] = ID;
             index += 4;
         }
-        vertexOffsetAccumulator += e.vertices.length / Entity.LOCAL_MESH_STRIDE;
+        vertexOffsetAccumulator += e.worldVertices.length / Entity.LOCAL_MESH_STRIDE;
         
             currentIndicesIndex = index;
         }
@@ -196,24 +208,18 @@ public class Scene {
     void entityConversions(){
         currentVerticesSize = 0;
         for(Entity e : entities.values()){
-            if(e.vertices == null) continue;
-            currentVerticesSize += (e.vertices.length/Entity.LOCAL_MESH_STRIDE)*STRIDE;
+            if(e.worldVertices == null) continue;
+            currentVerticesSize += (e.worldVertices.length/Entity.LOCAL_MESH_STRIDE)*STRIDE;
         }
         CountDownLatch latch = new CountDownLatch(threadCount);
-        Camera cm = cameras.get(cameraFocused);
         int start = 0;
         for(int i = 0; i < threadCount; i++){
             final int threadStart = start;
             int end = threadEntityOffsets[i];
-            // futures[i] = CompletableFuture.runAsync(() -> {
-            // for(int j = threadStart; j < end; j++){
-            //         transformEntity(j, cm);
-            //     }
-            // }, entityPool);
             entityPool.execute(() -> {
                 try {
                     for(int j = threadStart; j < end; j++){
-                        transformEntity(j, cm);
+                        transformEntity(j, activeCamera);
                     }
                 } finally {
                     latch.countDown();
@@ -221,7 +227,6 @@ public class Scene {
             });
             start = threadEntityOffsets[i];
         }
-        // CompletableFuture.allOf(futures).join();
         try {
             latch.await();
         } catch (InterruptedException e) {
@@ -231,12 +236,12 @@ public class Scene {
     void transformEntity(int id, Camera cm){
         Entity e = entities.get(id);
         // e.applyTransformationValues();
-            if(e.vertices == null) return;
+            if(e.worldVertices == null) return;
             Matrix t = e.transformation;
             Matrix cameraMatrix = cm.combinedMatrix;
             double[] tData = t.data;
             double[] cData = cameraMatrix.data;
-            double[] localMesh = e.vertices;
+            double[] localMesh = e.worldVertices;
             int start = e.globalVerticeOffset * STRIDE;
             int end = start + (localMesh.length/Entity.LOCAL_MESH_STRIDE)*STRIDE;
             int index = 0;
