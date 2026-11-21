@@ -2,8 +2,8 @@
 import static java.lang.Math.random;
 
 public class ParticleSystem {
-    double[] vertices;
-    double[] projected;
+    double[] vertices; 
+    double[] projected; 
     boolean[] visible;
     int[] baseSize;
     int[] dynamicSize;

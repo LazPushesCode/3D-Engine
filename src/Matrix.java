@@ -1,12 +1,15 @@
 public class Matrix {
     double[] data;
     double[][] m;
+    // returns 2d double array made up of matrix values (outdated)
     public Matrix(double[][] a){
         this.m = a;
     }
+    // returns single double array made up of matrix values
     public Matrix(double[] d){
         this.data = d;
     }
+    // Returns identity matrix (outdated)
     public static Matrix identity(){
         return new Matrix(new double[][]{
             {1, 0, 0, 0},
@@ -15,6 +18,7 @@ public class Matrix {
             {0, 0, 0, 1}
         });
     }
+    // Returns identity matrix
     public static Matrix Identity(){
         return new Matrix(new double[]{
             1, 0, 0, 0,
@@ -23,6 +27,8 @@ public class Matrix {
             0, 0, 0, 1
         });
     }
+    // Returns translation matrix 
+    // Translation moves objects linearly in 3d space
     public static Matrix Translate(double x, double y, double z){
         return new Matrix(new double[]{
             1, 0, 0, x,
@@ -31,6 +37,7 @@ public class Matrix {
             0, 0, 0, 1
         });
     }
+    // Returns scale matrix
     public static Matrix Scale(double x, double y, double z){
         return new Matrix(new double[] {
             x, 0, 0, 0,
@@ -39,6 +46,7 @@ public class Matrix {
             0, 0, 0, 1
         });
     }
+    // Returns rotation matrix around the x axis
     public static Matrix Rotatex(double degree){
         double radian = Math.toRadians(degree);
         double cosRes = Math.cos(radian);
@@ -50,6 +58,7 @@ public class Matrix {
             0, 0, 0, 1
         });
     }
+    // Returns rotation matrix around the y axis
     public static Matrix Rotatey(double degree){
         double radian = Math.toRadians(degree);
         double cosRes = Math.cos(radian);
@@ -61,6 +70,7 @@ public class Matrix {
             0, 0, 0, 1
         });
     }
+    // returns rotation matrix around the z axis
     public static Matrix Rotatez(double degree){
         double radian = Math.toRadians(degree);
         double cosRes = Math.cos(radian);
@@ -72,6 +82,7 @@ public class Matrix {
             0, 0, 0, 1
         });
     }
+    // Multiplies this Matrix by givenMatrix and returns the resulting matrix
     public Matrix multiply(Matrix givenMatrix){
         double [] res = new double [16];
         for(int i = 0; i < 4; i++){
@@ -84,6 +95,7 @@ public class Matrix {
         }
         return new Matrix(res);
     }
+    // Multiplies two vectors and returns resulting double array
     public double[] vectorTransformation(double[] vector){
         double [] res = new double[4];
         for(int i = 0; i < 4; i++){
@@ -94,10 +106,9 @@ public class Matrix {
         }
         return res;
     }
+    // Transposes this matrix
     public Matrix transposeMatrix(){
         double[] res = new double[16];
-        //(i*4) + j
-        //(j*4) + i
         for(int i = 0; i < 4; i++){
             for(int j = 0; j < 4; j++){
                 res[(j*4)+i] = data[(i*4)+j];
@@ -105,6 +116,7 @@ public class Matrix {
         }
         return new Matrix(res);
     }
+    // Inverts this matrix
     public Matrix shortcutInverseMatrix(){
         double tx = this.data[3];
         double ty = this.data[7];
@@ -123,6 +135,7 @@ public class Matrix {
 
         return new Matrix(temp);
     }
+    // outdated function
     public Matrix multiply2dMatrix(Matrix a){
         double [][] res = new double[4][4];
         for(int i = 0; i < 4; i++){
@@ -135,6 +148,7 @@ public class Matrix {
         }
         return new Matrix(res);
     }
+    // Returns Quaternion rotated matrix
     public static Matrix Rotate(Quaternion q){
         double w = q.data[0];
         double x = q.data[1];

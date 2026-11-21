@@ -1,23 +1,23 @@
 
 public class Animation {
     
-    
-    double[] entityIDs;
-    Camera cm;
+    double[] entityIDs; // Contains entities currently with animation timeline being applied to them
+    Camera cm; // Focused camera
 
-    long prevTime;
+    long prevTime; // Tracks number of seconds that have passed
 
+    // Contain all transformation data in separate arrays
     double[] translate;
     double[] rotate;
     double[] scale;
     double[] duration;
 
-    int currentKeyFrame;
+    int currentKeyFrame; // Determines current frame to animate (frames have their own set of transformation data)
     int totalKeyFrames;
 
-    final static int STRIDE = 3;
+    final static int STRIDE = 3; // Number of values in each transformation type (ie. x, y, and z)
 
-    boolean lockAnimation;
+    boolean lockAnimation; // If true, prevents the animation from continuing
 
     Animation(){
         translate = new double[STRIDE*10];
@@ -30,6 +30,7 @@ public class Animation {
 
         lockAnimation = false;
     }
+    // Initializes all frame values
     void createKeyFrame(double tx, double ty, double tz, 
         double rx, double ry, double rz, 
         double sx, double sy, double sz,
@@ -48,6 +49,7 @@ public class Animation {
             totalKeyFrames++;
             
     }
+    
     void playAnimation(Entity e, long currTime){
          if(currTime > duration[currentKeyFrame]){
             currentKeyFrame++;
@@ -64,10 +66,7 @@ public class Animation {
         e.rotatezWorld(elapsedTime*rotate[index+2]);
         prevTime = currTime;
     }
-    void addEntity(Entity e){
-    }
     void setCameraFocused(Camera givenCm){
         cm = givenCm;
     }
-    //reallocate buffers
 }
