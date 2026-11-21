@@ -3,16 +3,18 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class Engine {
-    WindowManager window;
-    InputManager inputManager;
-    AnimationManager animationManager;
-    TileManager tileManager;
+    WindowManager window; // Manages window panel operations and values
+    InputManager inputManager; // Manages user input and values
+    AnimationManager animationManager; // Manages keyframe animation systems
+    TileManager tileManager; // Manages screen tiles rendering
 
-    int cores;
+    int cores; // Number of cores available for use in rendering
 
-    boolean displayPipelineInfo;
+    boolean displayPipelineInfo; // Displays info used for debugging in terminal
 
-    Engine(){
+    // Default engine constructor if no parameters provided
+    // Initializes all classes engine uses in main rendering loop
+    Engine(){ 
         cores = Runtime.getRuntime().availableProcessors();
         window = new WindowManager(1920, 1080, cores);
         inputManager = new InputManager();
@@ -21,26 +23,39 @@ public class Engine {
         tileManager = new TileManager();
         displayPipelineInfo = false;
     }
+    // Reassigns window dimensions before runtime
     void setWindowDimensions(int width, int length){
         window.width = width;
         window.length = length;
     }
+    // Sets pipeline's texture filtering type to closest neighbor
+    // Lower quality, but fastest rendering
+    void enableClosestNeighborTextureFiltering(){
+        window.textureFilteringType = window.CLOSEST_NEIGHBOR; 
+    }
+    // Sets pipeline's texture filtering type to bilinear
+    // Slight edge in quality over closest neighbor at cost of performance
     void enableBilinearTextureFiltering(){
         window.textureFilteringType = window.BILINEAR;
     }
-
+    // If on, displays time analytics of each pipeline segment
+    void enableDisplayPipelineInformation(){
+        displayPipelineInfo = true;
+    }
+    // Starts the main render loop of pipeline.
+    // Takes a scene as a parameter. Given scene will have all its objects rendered on screen
     void run(Scene sceneToRender){
+        window.openWindow(); // Opens window panel using external libraries
+        
+        // Scene manages vertice and indice memory internally
+        sceneToRender.bindVertices(); // Scene initialize vertice buffers
+        sceneToRender.initializeGlobalIndices(); // Scene initializes indice buffers
 
-        window.openWindow();
+        Camera activeCamera = sceneToRender.activeCamera; // Snatch primary camera reference from scene
 
-        sceneToRender.bindVertices();
-        sceneToRender.initializeGlobalIndices();
+        activeCamera.aspect = (double) window.width / window.length; // Set primary camera's aspect using window's dimnesions
 
-        Camera activeCamera = sceneToRender.activeCamera;
-
-        activeCamera.aspect = (double) window.width / window.length;
-
-        long currentTime = (System.currentTimeMillis());
+        long currentTime = (System.currentTimeMillis()); 
         long previousTime = 0;
         long deltaTime = 0;
         long totalTime = 0;
@@ -56,10 +71,12 @@ public class Engine {
         int frames = 0;
         long lastFpsTime = System.currentTimeMillis();
 
-        ExecutorService tilePool = Executors.newFixedThreadPool(cores);
-        tileManager.createTiles(cores, window, sceneToRender);
+        ExecutorService tilePool = Executors.newFixedThreadPool(cores); // Pool of threads each rendering one tile section
+        tileManager.createTiles(cores, window, sceneToRender); // Initialize screen tiles for rendering
 
-        while(true){ 
+        // Main rendering loop
+        boolean runLoop = true;
+        while(runLoop){ 
             try {
                 deltaTime = (currentTime - previousTime)%1000;
                 totalTime += deltaTime;
@@ -69,40 +86,40 @@ public class Engine {
                 timeInput += (System.nanoTime() - start);
                 start = System.nanoTime();
 
-                animationManager.playAnimations(sceneToRender, deltaTime);
+                animationManager.playAnimations(sceneToRender, deltaTime); // Plays all initialized animations in scene
 
-                sceneToRender.assignEntitiesToThreads();
-                sceneToRender.updateEntityTransformations();
-                sceneToRender.entityConversions();
-                sceneToRender.fillLightBuffer();
-                sceneToRender.applyLightRotations();
+                sceneToRender.assignEntitiesToThreads(); // Each thread gets even amount of entities to render
+                sceneToRender.updateEntityTransformations(); // Applies world transformations on all entities
+                sceneToRender.entityConversions(); // Converts entities to clip space
+                sceneToRender.fillLightBuffer(); // Resets light buffers, updating values
+                sceneToRender.applyLightRotations(); // Applies rotation transfromation on all lights
                 timeConv += (System.nanoTime() - start);
 
                 start = System.nanoTime();
-                TriangleManager.cullOperations(sceneToRender);
-                timeCull += (System.nanoTime() - start);
+                TriangleManager.cullOperations(sceneToRender); // Discards triangles facing away from camera and outside frustum view
+                timeCull += (System.nanoTime() - start); 
 
                 start = System.nanoTime();
-                sceneToRender.convertToNDC(window, tileManager);
+                sceneToRender.convertToNDC(window, tileManager); // Convert remaining vertices to normalized space coordinates [-1, 1]
                 timeNdc += (System.nanoTime() - start);
                 
                 start = System.nanoTime();
-                tileManager.assignTrianglesToTiles(sceneToRender, window);
+                tileManager.assignTrianglesToTiles(sceneToRender, window); // Each tile receives batch of indices to render on screen
                 timeAssign += (System.nanoTime() - start);
 
-                sceneToRender.convertParticlesToClipSpace(activeCamera, window.width, window.length);
-                tileManager.tiles.parallelStream().forEach(tile -> {
-                    window.renderParticlesOnTile(tile, sceneToRender);
+                sceneToRender.convertParticlesToClipSpace(activeCamera, window.width, window.length); // Converts particles to clip space
+                tileManager.tiles.parallelStream().forEach(tile -> { // Allow each thread to render assigned tile
+                    window.renderParticlesOnTile(tile, sceneToRender); // Render particles on tile
                 });
 
                 start = System.nanoTime();
-                tileManager.tiles.parallelStream().forEach(tile -> {
-                    window.renderTile(tile, sceneToRender, activeCamera);
+                tileManager.tiles.parallelStream().forEach(tile -> { // Allow each thread to render assigned tile
+                    window.renderTile(tile, sceneToRender, activeCamera); // Render assigned indices on assigned tile
                 });
                 timeRender += (System.nanoTime() - start);
 
                 start = System.nanoTime();
-                window.updateScreen(tileManager);
+                window.updateScreen(tileManager); // Fill screen with pixel colors computed by each tile
                 timeScreen += (System.nanoTime() - start);
 
                 if(window.errorOccured) break;
@@ -111,7 +128,7 @@ public class Engine {
 
                 long now = System.currentTimeMillis();
                 if(now - lastFpsTime >= 1000){
-                    if(displayPipelineInfo){
+                    if(displayPipelineInfo){ // If true, display pipeline debugging information in terminal
                         System.out.println("=========================================");
                         System.out.println("FPS: " + frames);
                         System.out.printf("Input & Cam:   %.2f ms\n", (timeInput / (double)frames) / 1_000_000.0);
@@ -123,23 +140,24 @@ public class Engine {
                         System.out.printf("Update Screen:   %.2f ms\n", (timeScreen / (double)frames) / 1_000_000.0);
                         System.out.println("=========================================");
                     }
-                    // world.printSceneData();
-                    // tm.displayTileIndiceData();
-                    // Reset trackers for the next second
                     frames = 0;
                     lastFpsTime = now;
                     timeInput = timeConv = timeCull = timeNdc = timeAssign = timeRender = timeScreen = 0;
                 }
-
                 previousTime = currentTime;
                 currentTime = (System.currentTimeMillis());
-                sceneToRender.resetSceneFrameData();
-                tileManager.emptyTiles();
-
+                sceneToRender.resetSceneFrameData(); // Reset temporary scene data each frame
+                tileManager.emptyTiles(); // Remove all values from tile buffers. Fills back up each frame
+                if(inputManager.closeWindow){
+                    window.closeWindow(); // Disposes of window frame and closes
+                    tilePool.shutdownNow(); // Stops all threads inside tilePool
+                    runLoop = false; // Breaks while loop on next iteration
+                }
             } catch (Exception e) {
                 e.printStackTrace();
                 return;
             }
         }
+        System.exit(0); // Shuts down program after while loop
     }
 }

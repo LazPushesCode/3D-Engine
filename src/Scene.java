@@ -226,11 +226,6 @@ public class Scene {
     }
     // Converts all of scene's entities from local -> world -> view -> clip space
     void entityConversions(){
-        // currentVerticesSize = 0;
-        // for(Entity e : entities.values()){
-        //     if(e.worldVertices == null) continue;
-        //     currentVerticesSize += (e.worldVertices.length/Entity.LOCAL_MESH_STRIDE)*STRIDE;
-        // }
         CountDownLatch latch = new CountDownLatch(threadCount);
         int start = 0;
 

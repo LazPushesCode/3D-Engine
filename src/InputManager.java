@@ -9,12 +9,14 @@ public class InputManager implements KeyListener{
     sprint, increaseMovementSpeed, decreaseMovementSpeed, // Alters movement speed
     increaseRotationSpeed, decreaseRotationSpeed, // Alters rotation speed
     action, action2, action3, // Other keybinds
+    closeWindow,
     showTiles = false; // Shows bounding boxes of screen tiles used in rendering
 
     // If a key listed is pressed, will set given boolean as true
     @Override
     public void keyPressed(KeyEvent k){
         switch(k.getKeyCode()){
+            case KeyEvent.VK_ESCAPE -> closeWindow = true;
             case KeyEvent.VK_W -> forward = true;
             case KeyEvent.VK_S -> backward = true;
             case KeyEvent.VK_A -> left = true;
@@ -41,6 +43,7 @@ public class InputManager implements KeyListener{
     @Override
     public void keyReleased(KeyEvent k){
         switch(k.getKeyCode()){
+            case KeyEvent.VK_ESCAPE -> closeWindow = false;
             case KeyEvent.VK_W -> forward = false;
             case KeyEvent.VK_S -> backward = false;
             case KeyEvent.VK_A -> left = false;

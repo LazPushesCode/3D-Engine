@@ -37,6 +37,10 @@ public class WindowManager {
         frame.setVisible(true);
         panel.requestFocusInWindow();
     }
+    void closeWindow(){
+        frame.setVisible(false);
+        frame.dispose();
+    }
     // Refreshes screen and updates pixel colors
     void updateScreen(TileManager tm){
       java.util.Arrays.fill(panel.pixels, 0xFF000000); // Reset all pixel colors to black
