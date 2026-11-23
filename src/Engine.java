@@ -12,6 +12,8 @@ public class Engine {
 
     boolean displayPipelineInfo; // Displays info used for debugging in terminal
 
+    int defaultWindowColor;
+
     // Default engine constructor if no parameters provided
     // Initializes all classes engine uses in main rendering loop
     Engine(){ 
@@ -22,11 +24,16 @@ public class Engine {
         window.addInputListener(inputManager);
         tileManager = new TileManager();
         displayPipelineInfo = false;
+        defaultWindowColor = 0xFF000000;
     }
     // Reassigns window dimensions before runtime
     void setWindowDimensions(int width, int length){
         window.width = width;
         window.length = length;
+    }
+    // Assigns default color to window pixels
+    void setWindowDefaultColor(int color){
+        defaultWindowColor = color;
     }
     // Sets pipeline's texture filtering type to closest neighbor
     // Lower quality, but fastest rendering
@@ -72,7 +79,7 @@ public class Engine {
         long lastFpsTime = System.currentTimeMillis();
 
         ExecutorService tilePool = Executors.newFixedThreadPool(cores); // Pool of threads each rendering one tile section
-        tileManager.createTiles(cores, window, sceneToRender); // Initialize screen tiles for rendering
+        tileManager.createTiles(cores, window, defaultWindowColor, sceneToRender); // Initialize screen tiles for rendering
 
         // Main rendering loop
         boolean runLoop = true;
@@ -107,14 +114,18 @@ public class Engine {
                 tileManager.assignTrianglesToTiles(sceneToRender, window); // Each tile receives batch of indices to render on screen
                 timeAssign += (System.nanoTime() - start);
 
-                sceneToRender.convertParticlesToClipSpace(activeCamera, window.width, window.length); // Converts particles to clip space
-                tileManager.tiles.parallelStream().forEach(tile -> { // Allow each thread to render assigned tile
-                    window.renderParticlesOnTile(tile, sceneToRender); // Render particles on tile
-                });
+                // sceneToRender.convertParticlesToClipSpace(activeCamera, window.width, window.length); // Converts particles to clip space
+                // tileManager.tiles.parallelStream().forEach(tile -> { // Allow each thread to render assigned tile
+                //     window.renderParticlesOnTile(tile, sceneToRender); // Render particles on tile
+                // });
 
                 start = System.nanoTime();
                 tileManager.tiles.parallelStream().forEach(tile -> { // Allow each thread to render assigned tile
-                    window.renderTile(tile, sceneToRender, activeCamera); // Render assigned indices on assigned tile
+                    window.renderTile(tile, sceneToRender, activeCamera, inputManager.wireframe); // Render assigned indices on assigned tile
+                });
+                sceneToRender.convertParticlesToClipSpace(activeCamera, window.width, window.length); // Converts particles to clip space
+                tileManager.tiles.parallelStream().forEach(tile -> { // Allow each thread to render assigned tile
+                    window.renderParticlesOnTile(tile, sceneToRender); // Render particles on tile
                 });
                 timeRender += (System.nanoTime() - start);
 

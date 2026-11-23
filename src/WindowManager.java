@@ -6,7 +6,6 @@ public class WindowManager {
     int width; // Width of window panel
     int length; // Length of window panel
 
-    int[] windowColorBuffer; // Holds final pixel colors to be drawn on screen
     int textureFilteringType; 
 
     static final int CLOSEST_NEIGHBOR = 0;
@@ -16,16 +15,18 @@ public class WindowManager {
     boolean displayTilesOnScreen; // If true, displays tile bounding boxes on screen
     boolean errorOccured; // If true, error has occurred
 
+    boolean wireFrameRendering;
+
    // Intiializes WindowManager and values.
    // Takes window's width and height, as well as cpu cores for parameters
     WindowManager(int windowWidth, int windowHeight, int cores){
         frame.setSize(windowWidth, windowHeight);
         width = windowWidth;
         length = windowHeight;
+        wireFrameRendering = false;
         panel = new PixelPanel(width,length); 
         panel.setFocusable(true);
         panel.requestFocusInWindow();
-        windowColorBuffer = new int[width * length]; // Dimension of window is width * length
         displayTilesOnScreen = false; 
         errorOccured = false;
         populateBuffers();
@@ -58,14 +59,14 @@ public class WindowManager {
     }
     // Fills windowColorBuffer with 0's acting as a reset
     void populateBuffers(){
-      java.util.Arrays.fill(windowColorBuffer, 0);
+      // java.util.Arrays.fill(windowColorBuffer, 0);
     }
     // Sets all panel pixel colors back to black
     void clearScreen(){
         panel.clear(0xFF000000); // opaque black
     }
     // Renders all of tile's visible indices on its portion of the window
-    void renderTile(Tile t, Scene s, Camera c){
+    void renderTile(Tile t, Scene s, Camera c, boolean renderWireFrame){
       // if(t.id < 3 || t.id > 12)return;
 
       int y_offset = Scene.Y_OFFSET;
@@ -97,6 +98,7 @@ public class WindowManager {
          // Check if renderingTransparentObjects mode is equal to entity's transparent boolean. We must render non transparent objects first and THEN render transparent ones. 
          // Therefore, we set renderingTransparentObects to true once we've iterated through tile's indices array one (guaranteeing we have rendered all non transparent objects already)
          // Then, we render transparent objects, which are handled differently inside sampleTexture
+
          if(renderingTransparentObjects == e.transparent){
             // Obtain 3 indices forming triangle
             int pos0 = t.visibleIndices[i];
@@ -201,7 +203,8 @@ public class WindowManager {
                   if (b0 >= 0 && b1 >= 0 && b2 >= 0) {
                      double z = b0 * z0 + b1 * z1 + b2 * z2;
                      double wInterpolated = b0 * invw0 + b1 * invw1 + b2 * invw2;
-                     double depth = z / wInterpolated;
+                     double depth = z;
+                     // double depth = z / wInterpolated;
 
                      int xLocal = px - xMinTile;
                      int yLocal = py - yMinTile;
@@ -262,9 +265,11 @@ public class WindowManager {
                                  nz = (tz*r) + (bz*g) + (nz*b);
                                  double newMag = invSqrt(nx * nx + ny * ny + nz * nz);
                                     nx *= newMag; ny *= newMag; nz *= newMag;
-                                  sampleTexture(s, c, t, px, py, wx, wy, wz, nx, ny, nz, u, v, depth, textureBuffer, e, renderingTransparentObjects, false);
+                                 boolean isEdge = (b0 <= 0.01 || b1 <= 0.01 || b2 <= 0.01) && renderWireFrame;
+                                  sampleTexture(s, c, t, px, py, wx, wy, wz, nx, ny, nz, u, v, depth, isEdge, textureBuffer, e, renderingTransparentObjects, false);
                               } else {
-                                 sampleTexture(s, c, t, px, py, wx, wy, wz, nx, ny, nz, u, v, depth, textureBuffer, e, renderingTransparentObjects, false);
+                                 boolean isEdge = (b0 <= 0.01 || b1 <= 0.01 || b2 <= 0.01) && renderWireFrame;
+                                 sampleTexture(s, c, t, px, py, wx, wy, wz, nx, ny, nz, u, v, depth, isEdge, textureBuffer, e, renderingTransparentObjects, false);
                               }
                            }
                      }
@@ -280,18 +285,23 @@ public class WindowManager {
      }
     }
 }
-   void sampleTexture(Scene s, Camera c, Tile t, int px, int py, double wx, double wy, double wz, double nx, double ny, double nz, double u, double v, double z, int[]textureBuffer, Entity e, boolean isTransparent, boolean flag){
+   void sampleTexture(Scene s, Camera c, Tile t, int px, int py, double wx, double wy, double wz, double nx, double ny, double nz, double u, double v, double depth, boolean isEdge, int[]textureBuffer, Entity e, boolean isTransparent, boolean flag){
       int tileW = (int) t.tileWidth;
       int xLocal = px;
       int yLocal = py + (int)(t.tileLength - t.yOffset);
       int pixel = (yLocal * tileW) + xLocal;
+      if(isEdge){
+         if(!isTransparent)t.tileDepthBuffer[pixel] = (float)depth;
+         t.tileColorBuffer[pixel] = 0xfffc0505;
+         return;
+      }
       // if(localDepthTest(t,px, py, z)){
          // if(e.hasTexture){
             int textureWidth = e.textureWidth;
             int textureHeight = e.textureHeight;
             int r = 0, g = 0, b = 0;
             int color = 0;
-
+            
             if(textureFilteringType == 1){
                double uTex = u * (textureWidth - 1);
                double vTex = v * (textureHeight - 1);
@@ -356,7 +366,11 @@ public class WindowManager {
                int texU = Math.max(0, Math.min((int)u, textureWidth - 1));
                int texV = Math.max(0, Math.min((int)v, textureHeight - 1));
 
-               color = textureBuffer[(texV * textureWidth) + texU];
+               if(e.hasTexture){
+                  color = textureBuffer[(texV * textureWidth) + texU];
+               } else {
+                  color = e.defaultColor;
+               }
                
                r = (int)(((color >> 16) & 0xFF));
                g = (int)(((color >> 8) & 0xFF));
@@ -533,7 +547,7 @@ public class WindowManager {
             }
 
 
-            if(!isTransparent)t.tileDepthBuffer[pixel] = (float)z;
+            if(!isTransparent)t.tileDepthBuffer[pixel] = (float)depth;
             t.tileColorBuffer[pixel] = color;
             if(e.prioritize) t.tilePrioritize[pixel] = 1;
 
@@ -570,10 +584,17 @@ public class WindowManager {
                for(int dx = -radius; dx <= radius; dx++){
                   int px = xCenter + dx;
                   if(px < xMinTile || px >= xMaxTile) continue;
-                  int xLocal = px - xMinTile;
-                  int yLocal = py - yMinTile;
+                  // int xLocal = px;
+                  // int yLocal = py + (int)(t.tileLength - t.yOffset);
+                  // int xLocal = px - xMinTile;
+                  // int yLocal = py - yMinTile;
+                  // int pixelIndex = yLocal * tileW + xLocal;
+                  int xLocal = px;
+                  int yLocal = py + (int)(t.tileLength - t.yOffset);
                   int pixelIndex = yLocal * tileW + xLocal;
+                  
                   if(pz >= t.tileDepthBuffer[pixelIndex]){
+                     if(t.tileDepthBuffer[pixelIndex]>=0)System.out.println("tile: " + t.tileDepthBuffer[pixelIndex] + " pz: " + pz);
                      t.tileDepthBuffer[pixelIndex] = (float)pz;
                      int color = 0xFF000000 | (ps.r << 16) | (ps.g << 8) | ps.b;
                      t.tileColorBuffer[pixelIndex] = color;

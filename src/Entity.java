@@ -123,6 +123,12 @@ public class Entity {
         materialSpecular = spec;
         materialShininess = shiny;
     }
+    void setAffectedByLight(boolean statement){
+        affectedByLight = statement;
+    }
+    void setDefaultColor(int color){
+        defaultColor = color;
+    }
     // Updates entity transformation. Applies parent transformation onto entity and applies entity transformations onto children
     void updateTransformations(Matrix parentMatrix){
         Matrix local = Matrix.Translate(x,y,z)

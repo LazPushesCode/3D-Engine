@@ -7,38 +7,50 @@ public class main{
         Scene world = new Scene();
         world.addCamera(cm);
 
-        Entity cube = new Entity();
-        cube.cubeMesh(false);
-        world.addEntity(cube);
-        cube.scale(1,1,1);
+        Entity testCube = new Entity();
+        testCube.cubeMesh(false);
+        testCube.scale(5,5,5);
+        testCube.translate(0,0,15);
+        world.addEntity(testCube);
+        
+        int scalevalue = 100;
+
+        Entity floor = new Entity();
+        floor.cubeMesh(false);
+        floor.scale(scalevalue, 0, scalevalue);
+        floor.translate(0, -15, 15);
+        world.addEntity(floor);
+
         world.addEntity(cm);
         world.activeCamera = cm;
 
-        Entity testcube = new Entity();
-        testcube.cubeMesh(false);
-        testcube.scale(10,10,10);
-        world.addEntity(testcube);
-        
-
-        Light testLight = new Light(12, 12, 12);
+        Light testLight = new Light(4, 6, 9);
         testLight.setPoint();
-        testLight.setIntensity(5);
+        testLight.setIntensity(2);
         world.addLight(testLight);
         testLight.yaw = 75;
         testLight.pitch = 0;
-        cube.rotateyWorld(75);
-        cube.rotatexWorld(0);
-        cube.x = testLight.x; cube.y = testLight.y; cube.z = testLight.z;
+
+        Entity lightCube = new Entity();
+        lightCube.cubeMesh(false);
+        world.addEntity(lightCube);
+        lightCube.rotateyWorld(75);
+        lightCube.rotatexWorld(0);
+        lightCube.setAffectedByLight(false);
+        lightCube.x = testLight.x; lightCube.y = testLight.y; lightCube.z = testLight.z;
         
-        world.ambience = 0.2;
+        world.ambience = 0.1;
 
         ParticleSystem stars = new ParticleSystem();
-        stars.initializeSystem(0,0,0,10000, 1, 100000, 100000,100000);
+        stars.initializeSystem(0,0,0,1000, 1, 100000000, 100000000,100000000);
         world.addParticleSystem(stars);
         stars.setColor(255, 255, 255);
 
+        
+        // testCube.prioritize = true;
 
         Engine eg = new Engine();
+        eg.setWindowDefaultColor(0xFF757474);
         eg.enableBilinearTextureFiltering();
         eg.run(world);
     }

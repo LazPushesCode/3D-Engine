@@ -25,7 +25,7 @@ public class Camera extends Entity{
         this.FOV = Math.toRadians(fov);
         this.near = 0.1;
         this.far = 1000;
-        this.movementSpeed = 0.0005;
+        this.movementSpeed = 0.005;
         this.rotationSpeed = 0.3;
         sprintSpeed = 0.5;
         viewMatrix = Matrix.Identity();

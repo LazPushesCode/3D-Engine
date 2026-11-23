@@ -67,7 +67,7 @@ public class ParticleSystem {
             int pIndex = i * 3;
             projected[pIndex] = (int) ((cx+1) * 0.5 * windowWidth);
             projected[pIndex+1] = (int) ((1-cy) * 0.5 * windowLength);
-            projected[pIndex+2] = cz * invCw;
+            projected[pIndex+2] = (cz * invCw) * invCw;
             visible[i] = true;
             dynamicSize[i] = (int) Math.max(0, (baseSize[i] / cw));
         }

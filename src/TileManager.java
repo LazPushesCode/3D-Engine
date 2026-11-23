@@ -15,7 +15,7 @@ public class TileManager {
 
     // Creates tiles and adds to list of tiles
     // Takes number of cores system can spare, WindowManager, and Scene
-    void createTiles(int cores, WindowManager wm, Scene s){
+    void createTiles(int cores, WindowManager wm, int color, Scene s){
         if(!tiles.isEmpty()){
             tiles.clear();
         }
@@ -25,7 +25,7 @@ public class TileManager {
         double xOffset = tileWidth; // x Start
         double yOffset = tileLength; // yStart
         for(int i = 0; i < tileCount; i++){  // Loop to add tiles to list
-            tiles.add(new Tile(i, xOffset, yOffset, tileWidth, tileLength, s.initialIndicesSize*2)); 
+            tiles.add(new Tile(i, xOffset, yOffset, tileWidth, tileLength, color, s.initialIndicesSize*2)); 
             yOffset += tileLength;
         }
     }

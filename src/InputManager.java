@@ -8,6 +8,7 @@ public class InputManager implements KeyListener{
     rollLeft, rollRight, // Rotates camera's roll
     sprint, increaseMovementSpeed, decreaseMovementSpeed, // Alters movement speed
     increaseRotationSpeed, decreaseRotationSpeed, // Alters rotation speed
+    wireframe,
     action, action2, action3, // Other keybinds
     closeWindow,
     showTiles = false; // Shows bounding boxes of screen tiles used in rendering
@@ -37,6 +38,7 @@ public class InputManager implements KeyListener{
             case KeyEvent.VK_T -> action3 = true;
             case KeyEvent.VK_Q -> rollLeft = true;
             case KeyEvent.VK_E -> rollRight = true;
+            case KeyEvent.VK_V -> wireframe = !wireframe;
         }
     }
     // If a key listed is released, will set given boolean as false
@@ -64,11 +66,13 @@ public class InputManager implements KeyListener{
             case KeyEvent.VK_T -> action3 = false;
             case KeyEvent.VK_Q -> rollLeft = false;
             case KeyEvent.VK_E -> rollRight = false;
+            // case KeyEvent.VK_V -> wireframe = ;
             
         }
     }
     @Override
     public void keyTyped(KeyEvent k){
-        
+        switch(k.getKeyCode()){
+        }   
     }
 }

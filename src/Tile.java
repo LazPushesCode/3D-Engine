@@ -13,9 +13,11 @@ public class Tile {
 
     int ID; // tile ID provided by TileManager
 
+    int defaultColor;
+
     // Initializes Tile and its values
     // Takes given ID provided by tileManager, as well as xOffset, yOffset, width, length, and allocated space for indice buffer
-    Tile(int tileID, double x, double y, double w, double l, int allocatedIndiceSpace){
+    Tile(int tileID, double x, double y, double w, double l, int color, int allocatedIndiceSpace){
         xOffset = x;
         yOffset = y;
         tileWidth = w;
@@ -23,19 +25,21 @@ public class Tile {
         indicesCount = 0;
         visibleIndices = new int[allocatedIndiceSpace];
         ID = tileID;
+        defaultColor = color;
 
         tileColorBuffer = new int[(int)tileWidth * (int)tileLength];
         tileDepthBuffer = new float[(int)tileWidth * (int)tileLength];
         tilePrioritize = new int[(int)tileWidth * (int)tileLength];
 
-        java.util.Arrays.fill(tileColorBuffer, 0xFF000000); // Fill color buffer pixels with opaque black RGB
+               java.util.Arrays.fill(tileColorBuffer, defaultColor);
+ // Fill color buffer pixels with opaque black RGB
         java.util.Arrays.fill(tileDepthBuffer, -Float.MAX_VALUE); // Fill with lowest possible depth value
         java.util.Arrays.fill(tilePrioritize, 0); // Fill with 0 (if 1 then prioritize pixel)
     }
     // Resets all buffers and indiceCount. Occurs every frame 
     void emptyTileData(){
         indicesCount = 0; 
-       java.util.Arrays.fill(tileColorBuffer, 0xFF000000);
+       java.util.Arrays.fill(tileColorBuffer, defaultColor);
        java.util.Arrays.fill(tileDepthBuffer, -Float.MAX_VALUE);
        java.util.Arrays.fill(tilePrioritize, 0);
     }
