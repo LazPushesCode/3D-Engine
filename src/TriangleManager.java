@@ -269,9 +269,11 @@ public class TriangleManager {
 
         int newIndice = s.currentVerticesSize; // Populate starting from the last slot used inside globalVertices
         for(int i = 0; i < INDICE_STRIDE; i++){ // Use lerp to linearly interpolate each value (A + t(B-A)) from 0 to INDICE_STRIDE
+            if(newIndice+i >= s.initialVerticesSize){ // If max number of vertices has been reached, reallocate to add space to the memory
+                s.reallocateGlobalVerticeMemory();
+            }
             s.globalVertices[newIndice + i] = s.globalVertices[p1+i] + t*(s.globalVertices[p2+i] - s.globalVertices[p1+i]);
         }
-
         // Pull UV textures from each indice's original vertice data.
         double u1 = s.globalVertices[p1+u_offset];
         double v1 = s.globalVertices[p1+v_offset];

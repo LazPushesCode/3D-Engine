@@ -286,7 +286,7 @@ public class WindowManager {
       int yLocal = py + (int)(t.tileLength - t.yOffset);
       int pixel = (yLocal * tileW) + xLocal;
       // if(localDepthTest(t,px, py, z)){
-         if(e.hasTexture){
+         // if(e.hasTexture){
             int textureWidth = e.textureWidth;
             int textureHeight = e.textureHeight;
             int r = 0, g = 0, b = 0;
@@ -302,10 +302,23 @@ public class WindowManager {
                double xDist = uTex - x0;
                double yDist = vTex - y0; 
 
-               int col00 = textureBuffer[(y0*textureWidth) + x0];
-               int col10 = textureBuffer[(y0*textureWidth) + x1];
-               int col01 = textureBuffer[(y1*textureWidth) + x0];
-               int col11 = textureBuffer[(y1*textureWidth) + x1];
+               int col00 = 0;
+               int col10 = 0;
+               int col01 = 0;
+               int col11 = 0;
+
+               if(e.hasTexture){
+                  col00 = textureBuffer[(y0*textureWidth) + x0];
+                  col10 = textureBuffer[(y0*textureWidth) + x1];
+                  col01 = textureBuffer[(y1*textureWidth) + x0];
+                  col11 = textureBuffer[(y1*textureWidth) + x1];
+               } else {
+                  col00 = e.defaultColor;
+                  col10 = e.defaultColor;
+                  col01 = e.defaultColor;
+                  col11 = e.defaultColor;
+               }
+
 
                int r00 = (col00 >> 16) & 0xFF;
                int r10 = (col10 >> 16) & 0xFF;
@@ -524,11 +537,11 @@ public class WindowManager {
             t.tileColorBuffer[pixel] = color;
             if(e.prioritize) t.tilePrioritize[pixel] = 1;
 
-         } else {
-            t.tileDepthBuffer[pixel] = (float)z;
-            t.tileColorBuffer[pixel] =  (flag) ? 0xFFFF0000 : 0xFF00FF;
-            if(e.prioritize) t.tilePrioritize[pixel] = 1;
-         }
+         // } else {
+         //    t.tileDepthBuffer[pixel] = (float)z;
+         //    t.tileColorBuffer[pixel] =  (flag) ? 0xFFFF0000 : 0xFF00FF;
+         //    if(e.prioritize) t.tilePrioritize[pixel] = 1;
+         // }
       
    }
    void renderParticlesOnTile(Tile t, Scene s){

@@ -146,13 +146,19 @@ public class Scene {
     // Occurs once during startup
     // Calculates total number of vertices and indices needed to initialize buffers
     void bindVertices(){
-        initialVerticesSize = calculateVerticeCount();
-        globalVertices = new double[initialVerticesSize*10];
+        initialVerticesSize = calculateVerticeCount()*10;
+        globalVertices = new double[initialVerticesSize];
         currentVerticesSize = initialVerticesSize;
-        initialIndicesSize = calculateTriangleCount();
+        initialIndicesSize = calculateTriangleCount()*2;
 
         globalIndices = new int[initialIndicesSize];
-        processedIndices = new int[initialIndicesSize*2];
+        processedIndices = new int[initialIndicesSize];
+    }
+    void reallocateGlobalVerticeMemory(){
+        initialVerticesSize *= 4;
+        double[] temp = new double[initialVerticesSize];
+        System.arraycopy(globalVertices, 0, temp, 0, globalVertices.length);
+        globalVertices = temp;
     }
     // Obtains total number of vertices and returns vertices * STRIDE for total space count needed
     int calculateVerticeCount(){
