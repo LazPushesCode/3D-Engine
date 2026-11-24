@@ -1,3 +1,5 @@
+![VALDA 3D Engine Banner](resources/assets/VALDA_FINAL.png)
+
 Have Java extension installed
 
 compile in terminal:
