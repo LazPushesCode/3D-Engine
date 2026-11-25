@@ -318,10 +318,14 @@ public class WindowManager {
                int col11 = 0;
 
                if(e.hasTexture){
-                  col00 = textureBuffer[(y0*textureWidth) + x0];
-                  col10 = textureBuffer[(y0*textureWidth) + x1];
-                  col01 = textureBuffer[(y1*textureWidth) + x0];
-                  col11 = textureBuffer[(y1*textureWidth) + x1];
+                  try{
+                     col00 = textureBuffer[(y0*textureWidth) + x0];
+                     col10 = textureBuffer[(y0*textureWidth) + x1];
+                     col01 = textureBuffer[(y1*textureWidth) + x0];
+                     col11 = textureBuffer[(y1*textureWidth) + x1];
+                  } catch(Exception d){
+                     return;
+                  }
                } else {
                   col00 = e.defaultColor;
                   col10 = e.defaultColor;
@@ -391,6 +395,12 @@ public class WindowManager {
                      }
                      if(g > r && g > b){
                         g = Math.max(r, b);
+                     }
+                     if(e.useDefaultColorWithTexture){
+                        color = e.defaultColor;
+                        r = (int)(((color >> 16) & 0xFF));
+                        g = (int)(((color >> 8) & 0xFF));
+                        b = (int)((color & 0xFF));
                      }
                   }
 
@@ -594,7 +604,6 @@ public class WindowManager {
                   int pixelIndex = yLocal * tileW + xLocal;
                   
                   if(pz >= t.tileDepthBuffer[pixelIndex]){
-                     if(t.tileDepthBuffer[pixelIndex]>=0)System.out.println("tile: " + t.tileDepthBuffer[pixelIndex] + " pz: " + pz);
                      t.tileDepthBuffer[pixelIndex] = (float)pz;
                      int color = 0xFF000000 | (ps.r << 16) | (ps.g << 8) | ps.b;
                      t.tileColorBuffer[pixelIndex] = color;

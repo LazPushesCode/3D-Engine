@@ -27,7 +27,7 @@ public class Camera extends Entity{
         this.far = 1000;
         this.movementSpeed = 0.005;
         this.rotationSpeed = 0.3;
-        sprintSpeed = 0.5;
+        sprintSpeed = 0.1;
         viewMatrix = Matrix.Identity();
         projectionMatrix = Matrix.Identity();
         combinedMatrix = Matrix.Identity();

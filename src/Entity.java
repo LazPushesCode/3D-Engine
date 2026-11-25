@@ -71,6 +71,7 @@ public class Entity {
     boolean backFaceCulling; // Determines if entity undergoes backface culling operations
     boolean prioritize; // Determines if entity is prioritized to render in front of other entities regardless of depth
     boolean affectedByLight; // Determines if entity undergoes pixel lighting operations
+    boolean useDefaultColorWithTexture;
     
     // Initializes entity and variables. Requires secondary mesh generation to create mesh data
     Entity(){
@@ -107,6 +108,7 @@ public class Entity {
         affectedByLight = true;
         hasTexture = false;
         hasNormalMap = false;
+        useDefaultColorWithTexture = false;
         childrenCount = 0;
         verticeCount = 0;
         currentTrackIndiceSize = 0;
@@ -122,6 +124,13 @@ public class Entity {
         materialDiffuse = diff;
         materialSpecular = spec;
         materialShininess = shiny;
+    }
+    void setChildrenMaterialValues(double diff, double spec, double shiny){
+        for(Entity c : children.values()){
+            c.materialDiffuse = diff;
+            c.materialSpecular = spec;
+            c.materialShininess = shiny;
+        }
     }
     void setAffectedByLight(boolean statement){
         affectedByLight = statement;
@@ -145,6 +154,11 @@ public class Entity {
         textureWidth = t.width;
         textureBuffer = t.buffer;
         hasTexture = true;
+    }
+    void applyTexturesToChildren(Texture t){
+        for(Entity c : children.values()){
+            c.applyTexture(t);
+        }
     }
     void setTexture(BufferedImage t){
         try{
@@ -635,13 +649,55 @@ public class Entity {
         child.parent = this;
         childrenCount++;
     }
+    void copyEntityValues(Entity et){
+        worldVertices = et.worldVertices.clone();
+        staticVertices = et.staticVertices.clone();
+        indices = et.indices.clone();
+        if(et.hasTexture)textureBuffer = et.textureBuffer.clone();
+        textureHeight = et.textureHeight;
+        hasTexture = et.hasTexture;
+        if(et.hasNormalMap)normalMapBuffer = et.normalMapBuffer.clone();
+        normalMapHeight = et.normalMapHeight;
+        normalMapWidth = et.normalMapWidth;
+        hasNormalMap = et.hasNormalMap;
+        materialDiffuse = et.materialDiffuse;
+        materialSpecular = et.materialSpecular;
+        materialShininess = et.materialShininess;
+        greenScreen = et.greenScreen;
+        transparent = et.transparent;
+        alpha = et.alpha;
+        texture = et.texture;
+        normalMap = et.normalMap;
+        x = et.x; y = et.y; z = et.z;
+        yaw = et.yaw; pitch = et.pitch; roll = et.roll;
+        xSize = et.xSize; ySize = et.ySize; zSize = et.zSize;
+        orientation = et.orientation;
+        verticeCount = et.verticeCount;
+        globalVerticeOffset = et.globalVerticeOffset;
+        globalIndiceOffset = et.globalIndiceOffset;
+        defaultColor = et.defaultColor;
+        backFaceCulling = et.backFaceCulling;
+        prioritize = et.prioritize;
+        affectedByLight = et.affectedByLight;
+    }
     // Sets green screen boolean to given value
     void setGreenScreen(boolean b){
         greenScreen = b;
     }
+    void setChildrenGreenScreen(boolean b){
+        for(Entity c : children.values()){
+            c.greenScreen = b;
+        }
+    }
     // Sets transparent boolean to given value
     void setTransparent(boolean b){
         transparent = b;
+    }
+    void setChildrenTransparent(boolean b, double alpha){
+        for(Entity c : children.values()){
+            c.setTransparent(true);
+            c.setAlpha(alpha);
+        }
     }
     // Sets alpha value to given value
     void setAlpha(double v){

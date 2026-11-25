@@ -578,7 +578,7 @@ public class EffectManager {
         }
     }
     static void assignVideo(Entity et, int row, int col, int totalRow, int totalCol) {
-        int vc = et.vertices.length / Entity.LOCAL_MESH_STRIDE;
+        int vc = et.worldVertices.length / Entity.LOCAL_MESH_STRIDE;
         double xMin = Double.POSITIVE_INFINITY;
         double xMax = Double.NEGATIVE_INFINITY;
         double yMin = Double.POSITIVE_INFINITY;
@@ -588,9 +588,9 @@ public class EffectManager {
 
         for(int i = 0; i < vc; i++){
             int index = i * Entity.LOCAL_MESH_STRIDE;
-            double x = et.vertices[index];
-            double y = et.vertices[index+1];
-            double z = et.vertices[index+2];
+            double x = et.worldVertices[index];
+            double y = et.worldVertices[index+1];
+            double z = et.worldVertices[index+2];
             if(x < xMin) xMin = x;
             if(x > xMax) xMax = x;
             if(y < yMin) yMin = y;
@@ -608,22 +608,19 @@ public class EffectManager {
             double u,v;
 
             if(depth > width && depth > length){
-                u = (depth == 0) ? 0 : (et.vertices[index+2] - zMin) / depth;
-                v = (depth == 0) ? 0 : (et.vertices[index+1] - yMin) / length;
+                u = (depth == 0) ? 0 : (et.worldVertices[index+2] - zMin) / depth;
+                v = (depth == 0) ? 0 : (et.worldVertices[index+1] - yMin) / length;
             } else if(width >= length){
-                u = (width == 0) ? 0 : (et.vertices[index] - xMin) / width;
-                v = (width == 0) ? 0 : (et.vertices[index+1] - yMin) / length;
+                u = (width == 0) ? 0 : (et.worldVertices[index] - xMin) / width;
+                v = (width == 0) ? 0 : (et.worldVertices[index+1] - yMin) / length;
             } else {
-                u = (length == 0) ? 0 : (et.vertices[index] - xMin) / width;
-                v = (length == 0) ? 0 : (et.vertices[index+2] - zMin) / depth;
+                u = (length == 0) ? 0 : (et.worldVertices[index] - xMin) / width;
+                v = (length == 0) ? 0 : (et.worldVertices[index+2] - zMin) / depth;
             }
 
 
-            et.vertices[index+4] = (u + col ) / totalCol;
-            et.vertices[index+5] = (v + row) / totalRow;
-
-            
-            
+            et.worldVertices[index+4] = (u + col ) / totalCol;
+            et.worldVertices[index+5] = (v + row) / totalRow;
         }
     }
 

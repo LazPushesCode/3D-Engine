@@ -51,7 +51,7 @@ public class Engine {
     }
     // Starts the main render loop of pipeline.
     // Takes a scene as a parameter. Given scene will have all its objects rendered on screen
-    void run(Scene sceneToRender){
+    void run(Scene sceneToRender, Entity logo){
         window.openWindow(); // Opens window panel using external libraries
         
         // Scene manages vertice and indice memory internally
@@ -95,6 +95,14 @@ public class Engine {
 
                 animationManager.playAnimations(sceneToRender, deltaTime); // Plays all initialized animations in scene
 
+                if(inputManager.action){
+                    double speed = 0.00001;
+                    for(int i = 0; i < 994; i++){
+                        logo.children.get(i).translate(0, 0, speed*deltaTime);
+                        speed += 0.00000001;
+                    }
+                }
+
                 sceneToRender.assignEntitiesToThreads(); // Each thread gets even amount of entities to render
                 sceneToRender.updateEntityTransformations(); // Applies world transformations on all entities
                 sceneToRender.entityConversions(); // Converts entities to clip space
@@ -113,11 +121,6 @@ public class Engine {
                 start = System.nanoTime();
                 tileManager.assignTrianglesToTiles(sceneToRender, window); // Each tile receives batch of indices to render on screen
                 timeAssign += (System.nanoTime() - start);
-
-                // sceneToRender.convertParticlesToClipSpace(activeCamera, window.width, window.length); // Converts particles to clip space
-                // tileManager.tiles.parallelStream().forEach(tile -> { // Allow each thread to render assigned tile
-                //     window.renderParticlesOnTile(tile, sceneToRender); // Render particles on tile
-                // });
 
                 start = System.nanoTime();
                 tileManager.tiles.parallelStream().forEach(tile -> { // Allow each thread to render assigned tile
