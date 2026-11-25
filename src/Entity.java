@@ -231,6 +231,14 @@ public class Entity {
         initializeVariables();
         transformation = Matrix.Identity();
     }
+    void pyramidMesh(boolean inverted){
+        double[] pyramidVertices = MeshGenerator.generatePyramidVertices();
+        int[] pyramidIndices = MeshGenerator.generateCubeIndices(inverted);
+        pyramidVertices = MeshGenerator.bakeNormalVectors(pyramidVertices, pyramidIndices);
+        initializeArrays(pyramidVertices, pyramidIndices);
+        initializeVariables();
+        transformation = Matrix.Identity();
+    }
     // Assigns square vertices and indice data to Entity's buffers
     void squareMesh(){
         // Use MeshGenerator to procedurally generate square

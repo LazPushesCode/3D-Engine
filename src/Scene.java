@@ -41,7 +41,7 @@ public class Scene {
     
     static final int INDICE_STRIDE = 4; // Indice Stride (holds 3 triangle indices and entityID) ]
 
-    static final int LIGHT_STRIDE = 11; 
+    static final int LIGHT_STRIDE = 15; 
 
     int entityCount;
     int cameraCount;
@@ -358,9 +358,13 @@ public class Scene {
             lightBuffer[index+5] = l.zDir;
             lightBuffer[index+6] = l.intensity;
             lightBuffer[index+7] = l.type;
-            lightBuffer[index+8] = l.r;
-            lightBuffer[index+9] = l.g;
-            lightBuffer[index+10] = l.b;
+            lightBuffer[index+8] = l.innerCutOff;
+            lightBuffer[index+9] = l.outerCutOff;
+            lightBuffer[index+10] = l.linearAttenuation;
+            lightBuffer[index+11] = l.quadraticAttenuation;
+            lightBuffer[index+12] = l.r;
+            lightBuffer[index+13] = l.g;
+            lightBuffer[index+14] = l.b;
             currentLight++;
         }
     }

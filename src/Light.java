@@ -12,6 +12,13 @@ public class Light extends Entity{
 
     double r, g, b; // Color of light. RGB = (Red, Green, Blue)
     
+
+    double innerCutOff; // Determines spotlight's inner circle radius cutoff
+    double outerCutOff; // Determines spotlight's outer circle radius cutoff
+
+    double linearAttenuation;
+    double quadraticAttenuation;
+
     // Initializes Light and values.
     // Takes tx, ty, and tz as parameters determining light's 3D world positioning
     Light(double tx, double ty, double tz){
@@ -25,6 +32,10 @@ public class Light extends Entity{
         r = 1;
         g = 1;
         b = 1;
+        innerCutOff = 0.8;
+        outerCutOff = 0.7;
+        linearAttenuation = 0.05;
+        quadraticAttenuation = 0.03;
     }
     // Secondary Light constructor to list light type alongside x, y, and z world coordinates
     Light(int giventype, double tx, double ty, double tz){
@@ -54,6 +65,14 @@ public class Light extends Entity{
     // Sets given intensity as light's intensity
     void setIntensity(double givenIntensity){
         intensity = givenIntensity;
+    }
+    void configureSpotLight(double in, double out){
+        innerCutOff = in;
+        outerCutOff = out;
+    }
+    void configureAttenuation(double linear, double quadratic){
+        linearAttenuation = linear;
+        quadraticAttenuation = quadratic;
     }
     // Sets given tr, tg, and tb as light's rgb value\
     // Parameters are in range of 0 to 255

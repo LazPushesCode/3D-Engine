@@ -10,98 +10,61 @@ public class main{
         Texture valdaTexture = new Texture("..\\resources\\assets\\valda4.png");
 
         Camera cm = new Camera(70);
+        cm.translate(-9,2,-9);
+        cm.yaw+=45;
+        cm.pitch-=15;
 
         Scene world = new Scene();
         world.addCamera(cm);
 
         Entity cube = new Entity();
         cube.cubeMesh(false);
-        cube.scale(7,7,7);
-        cube.translate(0,0,15);
-        // cube.applyTexture(valdaTexture);
-        
+        cube.scale(3,3,3);
+        cube.translate(4,-4,4);
+        world.addEntity(cube);
+        cube.setMaterialValues(1, 1, 1);
+
         Entity sphere = new Entity();
-        sphere.sphereMesh(10, 10, 1, 1, 0, 0, 0, 0);
-        sphere.scale(4, 4,4);
-        sphere.translate(0,0,15);
+        sphere.sphereMesh(25, 25, 1, 1, 0, 0, 0, 0);
+        sphere.translate(-4, -4, 4);
+        world.addEntity(sphere);
+        sphere.scale(1,1,1);
+        sphere.rotatezLocal(-90);
 
-        int pink = 0xFFfa05f6;
-        int green = 0x05f205;
-        int red = 0xfc0000;
-        int cyan = 0x00ebfc;
-        int black = 0x121212;
-        
+        Entity pyramid = new Entity();
+        pyramid.pyramidMesh(false);
+        pyramid.translate(4, -4, -4);
+        world.addEntity(pyramid);
+        pyramid.scale(3,3,3);
 
-        HashMap<Integer, Entity> entityList = new HashMap<>();
-        for(int i = 0; i < 5000; i++){
-            Entity a = new Entity();
-            if(i%2 == 0){
-                a.copyEntityValues(cube);   
-            } 
-            if(i%9 == 0){
-                a.copyEntityValues(sphere);
-            }
-            entityList.put(i, a);
-            world.addEntity(a);
-            // a.translate(col, row, 0);
-            if(i%5==0)a.setDefaultColor(pink);
-            if(i%6==0)a.setDefaultColor(green);
-        }
+
+        Entity room = new Entity ();
+        room.cubeMesh(true);
+        room.scale(20, 10, 20);
+        world.addEntity(room);
+
+        Light roomLight = new Light(0, 5, 0 );
+        roomLight.setPoint();
+        roomLight.pitch = -90;
+        world.addLight(roomLight);
+        roomLight.setIntensity(1);
+
+        Entity lightCube = new Entity();
+        lightCube.cubeMesh(false);
+        world.addEntity(lightCube);
+        lightCube.setAffectedByLight(false);
+        lightCube.x = roomLight.x; lightCube.y = roomLight.y; lightCube.z = roomLight.z;
         
-        int scalevalue = 10000;
 
         world.addEntity(cm);
         world.activeCamera = cm;
-
-        Light testLight = new Light(0, 0, 0);
-        testLight.setDirectional();
-        testLight.setIntensity(1);
-        world.addLight(testLight);
-        // testLight.yaw = 50;
-        testLight.pitch = 25;
-
-        // Entity lightCube = new Entity();
-        // lightCube.cubeMesh(false);
-        // world.addEntity(lightCube);
-        // lightCube.rotateyWorld(75);
-        // lightCube.rotatexWorld(0);
-        // lightCube.setAffectedByLight(false);
-        // lightCube.x = testLight.x; lightCube.y = testLight.y; lightCube.z = testLight.z;
         
         world.ambience = 0.1;
-
-        moveObjects(entityList);
-
-        Entity logo = new Entity();
-        logo = EffectManager.generateGlassSquare(1000, 100, 24, 0.5, 0.5, 1, 0, 0, 100, 0, 100);
-        logo.translate(0, 0, 50);
-        world.addEntity(logo);
-        logo.scale(40,25,25);
-        logo.rotatexLocal(180);
-        logo.applyTexture(valdaTexture);
-        logo.applyTexturesToChildren(valdaTexture);
-        logo.setChildrenMaterialValues(1, 0.5, 1);
-        logo.setGreenScreen(true);
-        logo.setChildrenGreenScreen(true);
-        
-
-        int color = red;
-        for(int i = 0; i < logo.children.size(); i++){
-            Entity c = logo.children.get(i);
-            c.setAffectedByLight(false);
-            // c.setDefaultColor(red);
-            // logo.children.get(i).useDefaultColorWithTexture = true;
-        }
-
-        ParticleSystem stars = new ParticleSystem();
-        stars.initializeSystem(0,0,0,1000, 1, 100000000, 100000000,100000000);
-        world.addParticleSystem(stars);
-        stars.setColor(255, 255, 255);
 
         Engine eg = new Engine();
         eg.setWindowDefaultColor(0xFF757474);
         eg.enableBilinearTextureFiltering();
-        eg.run(world, logo);
+        eg.run(world);
     }
     static void moveObjects(HashMap<Integer, Entity> entityList){
         Random rand = new Random();

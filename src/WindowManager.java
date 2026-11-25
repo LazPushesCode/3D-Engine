@@ -445,9 +445,13 @@ public class WindowManager {
                      double zDir = s.lightBuffer[index + 5];
                      double intensity = s.lightBuffer[index + 6];
                      int type = (int) s.lightBuffer[index + 7];
-                     double lightR = s.lightBuffer[index+8];
-                     double lightG = s.lightBuffer[index+9];
-                     double lightB = s.lightBuffer[index+10];
+                     double innerCutOff = s.lightBuffer[index+8];
+                     double outerCutOff = s.lightBuffer[index+9];
+                     double linear = s.lightBuffer[index+10];
+                     double quadratic = s.lightBuffer[index+11];
+                     double lightR = s.lightBuffer[index+12];
+                     double lightG = s.lightBuffer[index+13];
+                     double lightB = s.lightBuffer[index+14];
 
                      directional = (type == Light.DIRECTIONAL);
                      spotlight = (type == Light.SPOTLIGHT);
@@ -503,16 +507,12 @@ public class WindowManager {
                      double attenuation = 1;
                      if(!directional){
                         double constant = 1;
-                        double linear = 0.05;
-                        double quadratic = 0.03;
                         attenuation = (1.0)/(constant + (linear * lMagnitude) + (quadratic * lMagnitude * lMagnitude));
                      }
                      
                      double spotIntensity = 1;
                      if(spotlight){
                         double angle = (dx * -lx) + (dy * -ly ) + (dz * -lz);
-                        double innerCutOff = 0.5;
-                        double outerCutOff = .4;
                         double epsilon = innerCutOff - outerCutOff;
                         double inten = (angle - outerCutOff) / epsilon;
                         spotIntensity = Math.max(0, Math.min(1.0, inten));
