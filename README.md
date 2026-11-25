@@ -23,7 +23,7 @@
 
 | Parameter | With Lighting | No Lighting |
 | :--- | :---: | :---: | 
-| **Render** | <img src="assets/TEXTURE_SAMPLING_DEMO.png" alt="Texture with light" width="320" /> | <img src="assets/TEXTURE_SAMPLING_NO_LIGHT_DEMO" alt="Texture no light" width="320" /> |
+| **Render** | <img src="assets/TEXTURE_SAMPLING_DEMO.png" alt="Texture with light" width="320" /> | <img src="assets/TEXTURE_SAMPLING_NO_LIGHT_DEMO.png" alt="Texture no light" width="320" /> |
 
       **Specifications**
       Reguires Java extension installation (such as VS Code Jva extension).
