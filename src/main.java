@@ -1,13 +1,8 @@
 
-import static java.lang.Math.random;
-import java.util.HashMap;
-import java.util.Random;
 
 
 public class main{
     public static void main(String[] args){
-
-        Texture valdaTexture = new Texture("..\\resources\\assets\\valda4.png");
 
         Camera cm = new Camera(70);
         cm.translate(-9,2,-9);
@@ -54,7 +49,6 @@ public class main{
         world.addEntity(lightCube);
         lightCube.setAffectedByLight(false);
         lightCube.x = roomLight.x; lightCube.y = roomLight.y; lightCube.z = roomLight.z;
-        
 
         world.addEntity(cm);
         world.activeCamera = cm;
@@ -65,29 +59,5 @@ public class main{
         eg.setWindowDefaultColor(0xFF757474);
         eg.enableBilinearTextureFiltering();
         eg.run(world);
-    }
-    static void moveObjects(HashMap<Integer, Entity> entityList){
-        Random rand = new Random();
-        // int num = rand.nextInt(-100, 101);
-        for(int i = 0; i < entityList.size(); i++){
-            double theta = random() * 2 * Math.PI;
-            double r = Math.max(0.3, random());
-            double radius = Math.pow(r, 2);
-            double x = radius * Math.cos(theta)*2000;
-            double y = radius * Math.sin(theta)*1000;
-            double z = random() *500;
-
-            double rx = random()*180;
-            double ry = random()*180;
-            applyTransformationsOnEntity(entityList, i, x, y, z, rx, ry, 0);
-        }
-
-    }
-    static void applyTransformationsOnEntity(HashMap<Integer, Entity> list, int i, double tx, double ty, double tz, double rx, double ry, double rz){
-        Entity e = list.get(i);
-        e.translate(tx, ty, tz);
-        e.rotatexLocal(rx);
-        e.rotateyLocal(ry);
-        e.rotatezLocal(rz);
     }
 }

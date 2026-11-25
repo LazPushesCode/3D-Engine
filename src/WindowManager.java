@@ -333,7 +333,6 @@ public class WindowManager {
                   col11 = e.defaultColor;
                }
 
-
                int r00 = (col00 >> 16) & 0xFF;
                int r10 = (col10 >> 16) & 0xFF;
                int r01 = (col01 >> 16) & 0xFF;

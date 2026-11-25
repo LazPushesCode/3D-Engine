@@ -35,7 +35,7 @@ public class Light extends Entity{
         innerCutOff = 0.8;
         outerCutOff = 0.7;
         linearAttenuation = 0.05;
-        quadraticAttenuation = 0.03;
+        quadraticAttenuation = 0.05;
     }
     // Secondary Light constructor to list light type alongside x, y, and z world coordinates
     Light(int giventype, double tx, double ty, double tz){
