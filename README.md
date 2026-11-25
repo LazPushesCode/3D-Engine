@@ -1,4 +1,4 @@
-![VALDA 3D Engine Banner](resources/assets/VALDA_FINAL.png)
+![VALDA 3D Engine Banner](assets/VALDA_FINAL.png)
 
       **Valda** is a multi-threaded, tile-based CPU software rasterizer written in Java built from scratch without external graphics APIs. It provides custom math and rendering classes to transform 3D geometry, apply lighting values, sample textures, and render frames on screen.
       **Motive**
