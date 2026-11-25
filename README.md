@@ -21,9 +21,9 @@
 
      VALDA utilizes UV texture mapping and barycentric coordinates to assign color to an interpolated pixel belonging to an entity. Images below use bilinear texture filtering.
 
-| Parameter | With Lighting | | No Lighting |
+| Parameter | With Lighting | No Lighting |
 | :--- | :---: | :---: | 
-| **Render** | <img src="assets/TEXTURE_SAMPLING_DEMO.png" alt="Texture with light" width="260" /> | <img src="assets/TEXTURE_SAMPLING_NO_LIGHT_DEMO" alt="Texture no light" width="260" /> |
+| **Render** | <img src="assets/TEXTURE_SAMPLING_DEMO.png" alt="Texture with light" width="320" /> | <img src="assets/TEXTURE_SAMPLING_NO_LIGHT_DEMO" alt="Texture no light" width="320" /> |
 
       **Specifications**
       Reguires Java extension installation (such as VS Code Jva extension).
