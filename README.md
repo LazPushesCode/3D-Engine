@@ -5,10 +5,11 @@
       The VALDA engine grew out of hands-on studying in linear algebra, computer graphics, and system design-reasearching how mathematical transforms, clipping, and rasterizing can turn raw numbers into real-time rendered visuals. Working on this project bridged the gap between abstract math and low-level rendering behavior.
 
 ## Mesh Generation
-     VALDA is capable of generating various geometric shapes including cubes, pyramids, spheres, and custom polygons. The engine requires a list of vertices and applicable indices in order to render the mesh.
+
+VALDA is capable of generating various geometric shapes including cubes, pyramids, spheres, and custom polygons. The engine requires a list of vertices and applicable indices in order to render the mesh.
 
 | Parameter | Shader | Wireframe |
-| :--- | :---: |
+| :--- | :---: | :---: |
 | **Render** | <img src="assets/MESHES_DEMO.png" alt="Mesh Generation" width="480" /> | <img src="assets/WIREFRAME_DEMO.png" alt="Wireframed Meshes" width="480" /> |
 
 ## Lighting
