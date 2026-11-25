@@ -8,14 +8,14 @@
 
 | Parameter | Point | Spot | Directional |
 | :--- | :---: | :---: | :---:|
-| **Render** | <img src = "assets/POINTLIGHT_DEMO.png" alt = "Point Light" width = "260 /> | <img src = "assets/SPOTLIGHT_DEMO.png" alt = "Spotlight" width = "260 /> | <img src = "assets/DIRECTIONAL_DEMO.png" alt = "Directional Light" width = "260 /> |
-| **Intensity** | '1' | '1' | '1' |
-| **Linear** | '0.05' | '0.05' | '0.05'|
-| **Quadratic** | '0.05' | '0.05' | '0.05' |
-| **Inner Cutoff** | '0.8' | '0.8' | '0.8' |
-| **Outer Cutoff** | '0.7' | '0.7' | '0.7' |
-| **Yaw** | '0' | '0' | '0' |
-| **Pitch** | '0' | '0' | '-90' |
+| *Render* | <img src="assets/POINTLIGHT_DEMO.png" alt="Point Light" width="260" /> | <img src="assets/SPOTLIGHT_DEMO.png" alt="Spotlight" width="260" /> | <img src="assets/DIRECTIONAL_DEMO.png" alt="Directional Light" width="260" /> |
+| **Intensity** | 1 | 1 | 1 |
+| **Linear** | 0.05 | 0.05 | 0.05|
+| **Quadratic** | 0.05 | 0.05 | 0.05 |
+| **Inner Cutoff** | 0.8 | 0.8 | 0.8 |
+| **Outer Cutoff** | 0.7 | 0.7 | 0.7 |
+| **Yaw** | 0 | 0 | 0 |
+| **Pitch** | 0 | 0 | -90 |
 
 
 
