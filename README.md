@@ -48,6 +48,15 @@ VALDA utilizes UV texture mapping and barycentric coordinates to assign color to
 
 <br><br>
 
+## Memory Efficiency and Data Layout
+
+To keep Java's garbage collector from activating every frame, the engine uses flat primitive buffers, packing contiguous double values representing vertice data. This design maximises CPU cache locality and minimizes cache misses. 
+
+<br>
+
+**Example:** INITIAL_MESH_STRIDE = 6: [x,y,z,w,u,v]
+
+
 **Specifications**: 
 * Requires Java extension installation (such as VS Code Jva extension).
 
