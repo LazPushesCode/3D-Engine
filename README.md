@@ -1,8 +1,11 @@
 ![VALDA 3D Engine Banner](assets/VALDA_FINAL.png)
 
-      **VALDA** is a multi-threaded, tile-based CPU software rasterizer written in Java built from scratch without external graphics APIs. It provides custom math and rendering classes to transform 3D geometry, apply lighting values, sample textures, and render frames on screen.
-      **Motive**
-      The VALDA engine grew out of hands-on studying in linear algebra, computer graphics, and system design-reasearching how mathematical transforms, clipping, and rasterizing can turn raw numbers into real-time rendered visuals. Working on this project bridged the gap between abstract math and low-level rendering behavior.
+### **What is it?**
+**VALDA** is a multi-threaded, tile-based CPU software rasterizer written in Java built from scratch without external graphics APIs. It provides custom math and rendering classes to transform 3D geometry, apply lighting values, sample textures, and render frames on screen.
+<br><br>
+### **Motive**
+The VALDA engine grew out of hands-on studying in linear algebra, computer graphics, and system design-reasearching how mathematical transforms, clipping, and rasterizing can turn raw numbers into real-time rendered visuals. Working on this project bridged the gap between abstract math and low-level rendering behavior.
+<br><br>
 
 ## Mesh Generation
 
@@ -12,6 +15,7 @@ VALDA is capable of generating various geometric shapes including cubes, pyramid
 | :--- | :---: | :---: |
 | **Render** | <img src="assets/MESHES_DEMO.png" alt="Mesh Generation" width="480" /> | <img src="assets/WIREFRAME_DEMO.png" alt="Wireframed Meshes" width="480" /> |
 
+<br><br>
 ## Lighting
 
 | Parameter | Point | Spot | Directional |
@@ -25,19 +29,26 @@ VALDA is capable of generating various geometric shapes including cubes, pyramid
 | **Yaw** | - | 0 | 0 |
 | **Pitch** | - | 0 | -90 |
 
+<br><br>
 ## Texture Sampling
 
-     VALDA utilizes UV texture mapping and barycentric coordinates to assign color to an interpolated pixel belonging to an entity. Images below use bilinear texture filtering.
+VALDA utilizes UV texture mapping and barycentric coordinates to assign color to an interpolated pixel belonging to an entity. Images below use bilinear texture filtering.
 
 | Parameter | With Lighting | No Lighting |
 | :--- | :---: | :---: | 
 | **Render** | <img src="assets/TEXTURE_SAMPLING_DEMO.png" alt="Texture with light" width="480" /> | <img src="assets/TEXTURE_SAMPLING_NO_LIGHT_DEMO.png" alt="Texture no light" width="480" /> |
 
-      **Specifications**
-      Reguires Java extension installation (such as VS Code Jva extension).
+<br><br>
 
-      **Complie Instruaction**
-      javac -d out src/*.java
+**Specifications**: 
+* Requires Java extension installation (such as VS Code Jva extension).
 
-      **Run Instruction**
-      java -cp out Main
+<br>
+
+**Complie Instruaction**: 
+* javac -d out src/*.java
+
+<br>
+
+**Run Instruction**: 
+* java -cp out Main
