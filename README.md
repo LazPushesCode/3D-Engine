@@ -40,6 +40,14 @@ VALDA utilizes UV texture mapping and barycentric coordinates to assign color to
 
 <br><br>
 
+## Engine Architecture
+
+<p align"center">
+  <img src="assets/class_diagram.png" alt="VALDA Engine Class Architecture Diagram" width = "1080"/>
+</p>
+
+<br><br>
+
 **Specifications**: 
 * Requires Java extension installation (such as VS Code Jva extension).
 
