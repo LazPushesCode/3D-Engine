@@ -50,19 +50,26 @@ VALDA utilizes UV texture mapping and barycentric coordinates to assign color to
 
 ## Memory Efficiency and Data Layout
 
-To keep Java's garbage collector from activating every frame, the engine uses flat primitive buffers, packing contiguous double values representing vertice data. This design maximises CPU cache locality and minimizes cache misses. 
+To minimize garbage collector overhead, the engine uses flat primitive arrays and pre-allocated buffers: 
+
+* **Contiguous Stride Buffers:** Vertex values are packed into flat double[] arrays to improve CPU cache locality and reduce cache misses (Example: INITIAL_MESH_STRIDE = 6 for [x, y, z, w, u, v], expanding to 12 values per vertex once normal and tangent vectors are baked in).
 
 <br>
 
-**Example:** INITIAL_MESH_STRIDE = 6: [x,y,z,w,u,v]
+* **Global Scene Buffers and Offsets:** The Scene class packs entity geometry values into shared global arrays and assigns offsets to each Entity, avoiding repeated array allocations during rendering.
 
+<br>
+
+* **Tile Buffers:** The screen is divided into partitioned tiles, each owning its own colorBuffer and depthBuffer. Worker threads rasterize assigned tiles in parallel without sharing mutable pixel buffers.
+
+<br><br>
 
 **Specifications**: 
-* Requires Java extension installation (such as VS Code Jva extension).
+* Requires Java extension installation (such as VS Code Java extension).
 
 <br>
 
-**Complie Instruaction**: 
+**Complie Instructions**: 
 * javac -d out src/*.java
 
 <br>
